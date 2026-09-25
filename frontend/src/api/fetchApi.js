@@ -1,0 +1,31 @@
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+/**
+ * Triggers the backend to pull the SharePoint extracts and combine them.
+ * Returns { total_files_fetched, combined_files: [{name, source_files, row_count, saved_path}], message }
+ */
+export async function fetchFromSharePoint() {
+  const res = await fetch(`${API_BASE}/api/fetch`, { method: "POST" });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Request failed (${res.status})`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Fetches the first `limit` rows of an already-combined file.
+ * Returns { name, columns, rows, total_rows, preview_row_count }
+ */
+export async function fetchPreview(name, limit = 20) {
+  const res = await fetch(`${API_BASE}/api/preview/${name}?limit=${limit}`);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Request failed (${res.status})`);
+  }
+
+  return res.json();
+}
