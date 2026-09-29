@@ -1,5 +1,9 @@
 # GyanSys Migration Tool
 
+> **Detailed, up-to-date documentation lives in [`docs/`](docs/README.md).** This
+> README predates the ECC/S4 split, the download endpoint and the Validation tab, so parts
+> of it (endpoint paths, logo filename, "adding a family") are out of date.
+
 Layered full-stack app for the ECC → S/4 migration workflow. This milestone
 adds the **Data Fetch** tab: pulling `S_MARC#FreeText` and `S_MBEW#FreeText`
 extracts from the SharePoint "Databricks Files" folder, merging each
