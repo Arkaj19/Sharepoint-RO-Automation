@@ -17,7 +17,13 @@ class Settings:
     # SharePoint location
     SHAREPOINT_HOSTNAME: str = os.getenv("SP_HOSTNAME", "adam702.sharepoint.com")
     SITE_PATH: str = os.getenv("SP_SITE_PATH", "/sites/ROSharePointAutomation")
+
+    # S4 (Databricks) files live inside this folder
     FOLDER_PATH: str = os.getenv("SP_FOLDER_PATH", "Databricks Files")
+
+    # ECC (DAP) files live at the ROOT of the Document Library.
+    # Empty string => "list children of /drive/root"
+    ECC_FOLDER_PATH: str = os.getenv("SP_ECC_FOLDER_PATH", "")
 
     # Where combined output files get saved locally
     OUTPUT_DIR: str = os.getenv("SP_OUTPUT_DIR", "./data/combined")

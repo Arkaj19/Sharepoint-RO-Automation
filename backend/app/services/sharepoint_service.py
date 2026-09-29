@@ -67,11 +67,30 @@ class SharePointClient:
 
     # -- folder contents ----------------------------------------------------
 
-    def list_folder_items(self, site_id: str, folder_path: str) -> list[dict]:
-        """Returns every item (files/folders) directly inside folder_path."""
-        url = f"{GRAPH_BASE}/sites/{site_id}/drive/root:/{folder_path}:/children"
-        items: list[dict] = []
+    # def list_folder_items(self, site_id: str, folder_path: str) -> list[dict]:
+    #     """Returns every item (files/folders) directly inside folder_path."""
+    #     url = f"{GRAPH_BASE}/sites/{site_id}/drive/root:/{folder_path}:/children"
+    #     items: list[dict] = []
 
+    #     while url:
+    #         resp = requests.get(url, headers=self._headers())
+    #         resp.raise_for_status()
+    #         data = resp.json()
+    #         items.extend(data.get("value", []))
+    #         url = data.get("@odata.nextLink")
+
+    #     return items
+
+    def list_folder_items(self, site_id: str, folder_path: str) -> list[dict]:
+        """Returns every item (files/folders) directly inside folder_path.
+        An empty folder_path means 'the root of the Document Library'.
+        """
+        if folder_path:
+            url = f"{GRAPH_BASE}/sites/{site_id}/drive/root:/{folder_path}:/children"
+        else:
+            url = f"{GRAPH_BASE}/sites/{site_id}/drive/root/children"
+
+        items: list[dict] = []
         while url:
             resp = requests.get(url, headers=self._headers())
             resp.raise_for_status()

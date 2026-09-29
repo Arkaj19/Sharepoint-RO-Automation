@@ -6,7 +6,6 @@ import Navbar from "./components/layout/NavBar";
 import Footer from "./components/layout/Footer";
 
 import DataFetchPage from "./pages/DataFetchPage";
-import MigrationPage from "./pages/MigrationPage";
 import ValidationPage from "./pages/ValidationPage";
 
 function App() {
@@ -24,7 +23,6 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/data-fetch" replace />} />
             <Route path="/data-fetch" element={<DataFetchPage />} />
-            <Route path="/migration" element={<MigrationPage />} />
             <Route path="/validation" element={<ValidationPage />} />
           </Routes>
         </main>

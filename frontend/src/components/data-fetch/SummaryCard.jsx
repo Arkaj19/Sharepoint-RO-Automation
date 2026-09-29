@@ -1,5 +1,5 @@
 // import { useState } from "react";
-// import { fetchPreview } from "../../api/fetchApi";
+// import { fetchPreview, downloadCombinedFile } from "../../api/fetchApi";
 // import PreviewTable from "./PreviewTable";
 
 // function SummaryCard({ file }) {
@@ -7,6 +7,20 @@
 //   const [previewData, setPreviewData] = useState(null);
 //   const [previewStatus, setPreviewStatus] = useState("idle"); // idle | loading | error
 //   const [previewError, setPreviewError] = useState("");
+//   const [downloadStatus, setDownloadStatus] = useState("idle"); // idle | loading | error
+//   const [downloadError, setDownloadError] = useState("");
+
+//   const handleDownload = async () => {
+//     setDownloadStatus("loading");
+//     setDownloadError("");
+//     try {
+//       await downloadCombinedFile(file.name);
+//       setDownloadStatus("idle");
+//     } catch (err) {
+//       setDownloadError(err.message || "Couldn't download file.");
+//       setDownloadStatus("error");
+//     }
+//   };
 
 //   const handleTogglePreview = async () => {
 //     const next = !showPreview;
@@ -29,7 +43,7 @@
 //   return (
 //     <div className="bg-white border border-gray-200 rounded-lg p-5">
 //       <div className="flex items-center justify-between mb-4">
-//         <h4 className="text-sm font-semibold text-gray-900">{file.name}.xlsx</h4>
+//         <h4 className="text-sm font-semibold text-gray-900">{file.name}</h4>
 //         <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
 //           Ready
 //         </span>
@@ -52,12 +66,26 @@
 //         Saved to {file.saved_path}
 //       </p>
 
-//       <button
-//         onClick={handleTogglePreview}
-//         className="text-xs font-medium text-slate-900 hover:underline mt-4"
-//       >
-//         {showPreview ? "Hide preview" : "Preview file"}
-//       </button>
+//       <div className="flex items-center gap-4 mt-4">
+//         <button
+//           onClick={handleTogglePreview}
+//           className="text-xs font-medium text-slate-900 hover:underline"
+//         >
+//           {showPreview ? "Hide preview" : "Preview file"}
+//         </button>
+
+//         <button
+//           onClick={handleDownload}
+//           disabled={downloadStatus === "loading"}
+//           className="text-xs font-medium text-slate-900 hover:underline disabled:opacity-50"
+//         >
+//           {downloadStatus === "loading" ? "Preparing .xlsx…" : "Download .xlsx"}
+//         </button>
+//       </div>
+
+//       {downloadStatus === "error" && (
+//         <p className="text-xs text-red-600 mt-2">{downloadError}</p>
+//       )}
 
 //       {showPreview && previewStatus === "loading" && (
 //         <p className="text-xs text-gray-500 mt-3">Loading preview…</p>
@@ -83,19 +111,16 @@ import PreviewTable from "./PreviewTable";
 function SummaryCard({ file }) {
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
-  const [previewStatus, setPreviewStatus] = useState("idle"); // idle | loading | error
+  const [previewStatus, setPreviewStatus] = useState("idle");
   const [previewError, setPreviewError] = useState("");
-  const [downloadStatus, setDownloadStatus] = useState("idle"); // idle | loading | error
-  const [downloadError, setDownloadError] = useState("");
+  const [downloadStatus, setDownloadStatus] = useState("idle");
 
   const handleDownload = async () => {
     setDownloadStatus("loading");
-    setDownloadError("");
     try {
-      await downloadCombinedFile(file.name);
+      await downloadCombinedFile(file.family, file.source_type);
       setDownloadStatus("idle");
     } catch (err) {
-      setDownloadError(err.message || "Couldn't download file.");
       setDownloadStatus("error");
     }
   };
@@ -103,12 +128,10 @@ function SummaryCard({ file }) {
   const handleTogglePreview = async () => {
     const next = !showPreview;
     setShowPreview(next);
-
     if (next && !previewData) {
       setPreviewStatus("loading");
-      setPreviewError("");
       try {
-        const data = await fetchPreview(file.name);
+        const data = await fetchPreview(file.family, file.source_type);
         setPreviewData(data);
         setPreviewStatus("idle");
       } catch (err) {
@@ -121,7 +144,9 @@ function SummaryCard({ file }) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-5">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-sm font-semibold text-gray-900">{file.name}</h4>
+        <h4 className="text-sm font-semibold text-gray-900">
+          {file.family} {file.source_type}
+        </h4>
         <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
           Ready
         </span>
@@ -145,37 +170,17 @@ function SummaryCard({ file }) {
       </p>
 
       <div className="flex items-center gap-4 mt-4">
-        <button
-          onClick={handleTogglePreview}
-          className="text-xs font-medium text-slate-900 hover:underline"
-        >
+        <button onClick={handleTogglePreview} className="text-xs font-medium text-slate-900 hover:underline">
           {showPreview ? "Hide preview" : "Preview file"}
         </button>
-
-        <button
-          onClick={handleDownload}
-          disabled={downloadStatus === "loading"}
-          className="text-xs font-medium text-slate-900 hover:underline disabled:opacity-50"
-        >
-          {downloadStatus === "loading" ? "Preparing .xlsx…" : "Download .xlsx"}
+        <button onClick={handleDownload} disabled={downloadStatus === "loading"} className="text-xs font-medium text-slate-900 hover:underline disabled:opacity-50">
+          {downloadStatus === "loading" ? "Preparing…" : "Download .xlsx"}
         </button>
       </div>
 
-      {downloadStatus === "error" && (
-        <p className="text-xs text-red-600 mt-2">{downloadError}</p>
-      )}
-
-      {showPreview && previewStatus === "loading" && (
-        <p className="text-xs text-gray-500 mt-3">Loading preview…</p>
-      )}
-
-      {showPreview && previewStatus === "error" && (
-        <p className="text-xs text-red-600 mt-3">{previewError}</p>
-      )}
-
-      {showPreview && previewData && previewStatus === "idle" && (
-        <PreviewTable preview={previewData} />
-      )}
+      {showPreview && previewStatus === "loading" && <p className="text-xs text-gray-500 mt-3">Loading…</p>}
+      {showPreview && previewStatus === "error" && <p className="text-xs text-red-600 mt-3">{previewError}</p>}
+      {showPreview && previewData && previewStatus === "idle" && <PreviewTable preview={previewData} />}
     </div>
   );
 }

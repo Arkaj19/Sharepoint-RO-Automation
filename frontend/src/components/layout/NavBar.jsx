@@ -2,8 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const TABS = [
   { to: "/data-fetch", label: "Data Fetch" },
-  { to: "/migration", label: "Validation" },
-  { to: "/validation", label: "LTMC Fill" },
+  { to: "/validation", label: "Validation" },
 ];
 
 function Navbar() {

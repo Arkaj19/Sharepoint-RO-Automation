@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import fetch as fetch_routes
+from app.api.routes import validate as validate_routes
 from app.core.config import settings
 
 app = FastAPI(title="GyanSys Migration Tool API", version="0.1.0")
@@ -15,6 +16,7 @@ app.add_middleware(
 )
 
 app.include_router(fetch_routes.router)
+app.include_router(validate_routes.router)
 
 
 @app.get("/api/health")
