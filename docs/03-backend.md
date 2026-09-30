@@ -1,5 +1,7 @@
 # 03 — Backend Reference
 
+> **Historical (pre-agentic).** This page describes the codebase at commit `731e6cd`. The fetch/merge services, the JSON mapping and several routes described here have been replaced - see [09 — Agentic architecture](09-agentic-architecture.md) for the current structure.
+
 > Part of the [documentation set](README.md). Every function in `backend/app/`
 > is covered here. Line numbers refer to commit `731e6cd`.
 

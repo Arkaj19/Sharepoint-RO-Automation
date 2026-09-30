@@ -1,27 +1,17 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+import { API_BASE, apiGet } from "./client";
 
-async function handleResponse(res) {
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `Request failed (${res.status})`);
-  }
-  return res.json();
+/**
+ * Validates the current ECC and S/4 snapshot versions of `sheet`
+ * ("MARC" | "MBEW") against its YAML mapping.
+ * Returns a ValidationReportResponse.
+ */
+export function validateLatest(sheet) {
+  return apiGet(`/api/validate/latest?sheet=${sheet}`);
 }
 
 /**
-* Auto-loads the latest ECC extract and S/4 combined file for `sheet`
-* ("MARC" | "MBEW") and runs the mapping-derived validation rules.
-* Returns a ValidationReportResponse.
-*/
-export async function validateLatest(sheet) {
-  const res = await fetch(`${API_BASE}/api/validate/latest?sheet=${sheet}`);
-  return handleResponse(res);
-}
-
-/**
-* Same validation, but against a directly uploaded ECC file + S/4 file
-* (useful before the ECC_DATA/S4 folders are wired up end to end).
-*/
+ * Same validation, but against a directly uploaded ECC file + S/4 file.
+ */
 export async function validateUpload(sheet, eccFile, s4File) {
   const form = new FormData();
   form.append("ecc_file", eccFile);
@@ -31,5 +21,9 @@ export async function validateUpload(sheet, eccFile, s4File) {
     method: "POST",
     body: form,
   });
-  return handleResponse(res);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Request failed (${res.status})`);
+  }
+  return res.json();
 }

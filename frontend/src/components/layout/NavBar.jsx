@@ -1,7 +1,12 @@
 import { NavLink } from "react-router-dom";
 
 const TABS = [
-  { to: "/data-fetch", label: "Data Fetch" },
+  { to: "/data", label: "Data" },
+  { to: "/changes", label: "Changes" },
+  { to: "/proposals", label: "Proposals" },
+  { to: "/mapping", label: "Mapping" },
+  { to: "/rulebook", label: "Rule Book" },
+  { to: "/output", label: "Output" },
   { to: "/validation", label: "Validation" },
 ];
 

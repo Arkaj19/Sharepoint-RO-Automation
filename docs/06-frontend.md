@@ -1,5 +1,7 @@
 # 06 — Frontend Reference
 
+> **Historical (pre-agentic).** This page describes the codebase at commit `731e6cd`. The fetch/merge services, the JSON mapping and several routes described here have been replaced - see [09 — Agentic architecture](09-agentic-architecture.md) for the current structure.
+
 > Part of the [documentation set](README.md). Source: `frontend/` (Vite + React 18,
 > plain JavaScript/JSX, Tailwind CSS 3, react-router-dom 6). 19 source files under
 > `src/` plus a logo image; no TypeScript, no state-management library, no tests.

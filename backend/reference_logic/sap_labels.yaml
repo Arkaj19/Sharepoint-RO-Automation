@@ -1,0 +1,109 @@
+# SAP technical field -> column label used in the DAP extracts (SAP screen labels).
+#
+# Seed for the mapping dictionaries. The importer (app/importers) checks every
+# entry against the real extract headers, verifies it against the S/4 output
+# where the field is passed through, and fills fields not listed here by value
+# matching. Entries end up in each mapping's `dictionary` through a G1
+# operation, so they are reviewed like any other mapping change.
+MARC:
+  MATNR: Material
+  WERKS: Plant
+  LVORM: DF at plant level
+  BESKZ: Procurement type
+  SOBSL: Special procurement
+  SFCPF: Prod.Sched.Profile
+  LGFSB: Storage loc. for EP
+  LGPRO: Prod. stor. location
+  DISMM: MRP Type
+  DISPO: MRP Controller
+  MMSTA: Plant-sp.matl status
+  MMSTD: Valid from
+  AUSME: Unit of issue
+  FRTME: Production unit
+  FEVOR: Prodn Supervisor
+  LOSGR: Costing Lot Size
+  AWSLS: Variance Key
+  LOSFX: Ordering costs
+  BSTMI: Minimum Lot Size
+  BSTMA: Maximum Lot Size
+  BSTFE: Fixed lot size
+  BSTRF: Rounding value
+  NFMAT: Follow-Up Material
+  AUSDT: Effective-out date
+  EKGRP: Purchasing Group
+  MTVFP: Availability check
+  PRCTR: Profit Center
+  XMCNG: Neg. stocks in plant
+  EPRIO: Stock determ. group
+  KZKUP: Co-product
+  KZKRI: Critical Part
+  QMATA: QM material auth.
+  KZDKZ: Documentation reqd
+  SSQSS: QM Control Key
+  STEUC: Control code
+  INDUS: Mat. CFOP category
+  INSMK: Post to insp. stock
+  DISGR: MRP group
+  MISKZ: Mixed MRP
+  LAGPR: Storage costs ind.
+  MEGRU: Unit of Measure Grp
+  SHFLG: Safety time ind.
+  SHPRO: STime period profile
+  AHDIS: MRP dep.requirements
+  SAUFT: Repetitive mfg
+  SFEPR: REM profile
+  KZPSP: Cross-project matl
+  FABKZ: JIT Sched. Indicator
+  SCHGT: Bulk material
+  VRBWK: "RefPlant:consumption"
+  VRBMT: "RefMatl: consumption"
+  VRBDT: Date to
+  KZKFK: Correction factors
+  FPRFM: Distr. profile
+  MULTIPLE_EKGRP: Purchasing Across Purchasing Group
+MBEW:
+  MATNR: Material
+  BWKEY: Valuation Area
+  BWTAR: Valuation Type
+  LVORM: Del. flag val. type
+  VPRSV: Price control
+  STPRS: Standard price
+  PEINH: Price unit
+  BKLAS: Valuation Class
+  BWTTY: Valuation Category
+  ZKPRS: Future price
+  ZKDAT: Valid from
+  ZPLP1: Planned price 1
+  ZPLP2: Planned price 2
+  ZPLP3: Planned price 3
+  ZPLD1: Planned price date 1
+  ZPLD2: Planned price date 2
+  ZPLD3: Planned price date 3
+  KOSGR: Overhead Group
+  HRKFT: Origin Group
+  MLAST: "Material price determination: control"
+  HKMAT: Material origin
+  MTUSE: Material usage
+  MTORG: Material origin.1
+  OWNPR: Produced in-house
+  EKLAS: "VC: Sales order stk"
+  QKLAS: Proj. stk val. class
+MARA:
+  MATNR: Material
+  MTART: Material Type
+  MEINS: Base Unit of Measure
+  PRDHA: Product Hierarchy
+  LVORM: DF at client level
+MARM:
+  MATNR: Material
+  MEINH: Alternative Unit of Measure
+  UMREZ: Numerator
+  UMREN: Denominator
+MARD:
+  MATNR: Material
+  WERKS: Plant
+  LGORT: Storage Location
+  LVORM: DF stor. loc. level
+MVKE:
+  MATNR: Material
+  LVORM: DF distr. chain

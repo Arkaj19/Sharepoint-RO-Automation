@@ -1,0 +1,2276 @@
+schema_version: 1
+object: MARC
+title: Plant Data
+s4_sheet: S_MARC
+mapping_version: 1
+content_hash: sha256:8b130bea9632f7dcdd4d23c8af20ea00ade97126b08c8c4eb4b53431f54ba8b4
+updated_at: '2026-09-29T12:48:41Z'
+updated_by: migration
+key:
+  fields:
+    - product_number
+    - plant
+  provenance:
+    status: migrated
+    confidence: 1.0
+    reason: Workbook 'Key' field plus the plant / valuation-area level key
+    source: migration
+filters: []
+raw_condition_notes: |-
+  INNER CONDITION:
+
+  • MARC.LVORM IS NULL
+  • MARC.WERKS = '1021'
+  • MARC.LVORM IS NULL
+  • MARC.WERKS = '1021'
+  • MARA.LVORM IS NULL
+  • MARC.LVORM IS NULL
+  • MARC.WERKS = '1021'
+  • base.DERIVED_WERKS <> '1021'
+
+  OUTER CONDITION:
+
+  • No Outer WHERE Condition
+value_maps: {}
+ignored_columns:
+  ecc: []
+  s4: []
+fields:
+  - id: product_number
+    s4_label: Product Number
+    s4_column: PRODUCT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: PRODUCT
+    group: Key
+    mandatory: true
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: plant
+    s4_label: Plant
+    s4_column: werks
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: WERKS
+      note: DERIVED_WERKS
+    mandatory: true
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: mrp_type
+    s4_label: MRP Type
+    s4_column: DISMM
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: DISMM
+    group: MRP Data
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: mrp_controller
+    s4_label: MRP Controller
+    s4_column: DISPO
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: DISPO
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: availability_check
+    s4_label: Availability Check
+    s4_column: MTVFP
+    ecc_column: null
+    ecc_source:
+      table: MARA
+      field: MTVFP
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: plant_specific_product_status
+    s4_label: Plant-Specific Product Status
+    s4_column: MMSTA
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MMSTA
+    group: General Data
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: valid_from_date_for_status
+    s4_label: Valid From Date for Status
+    s4_column: MMSTD
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MMSTD
+    mandatory: false
+    data_type: Date
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: controlling_area
+    s4_label: Controlling Area
+    s4_column: KOKRS
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: KOKRS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: profit_center
+    s4_label: Profit Center
+    s4_column: PRCTR
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: PRCTR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: unit_of_issue_iso_format
+    s4_label: Unit of Issue (ISO Format)
+    s4_column: AUSME
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: AUSME
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_batch_management_req
+    s4_label: 'Indicator: Batch Management Req.'
+    s4_column: XCHPF
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: XCHPF
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: serial_number_profile
+    s4_label: Serial Number Profile
+    s4_column: SERNP
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SERNP
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_neg_stocks_allowed_in_plant
+    s4_label: 'Indicator: Neg. Stocks Allowed in Plant'
+    s4_column: XMCNG
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: XMCNG
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: stock_determination_group
+    s4_label: Stock Determination Group
+    s4_column: EPRIO
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: EPRIO
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: loading_group
+    s4_label: Loading Group
+    s4_column: LADGR
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LADGR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_co_product
+    s4_label: 'Indicator: Co-Product'
+    s4_column: KZKUP
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KZKUP
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: batch_entry_in_production
+    s4_label: Batch Entry in Production
+    s4_column: KZECH
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KZECH
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_critical_part
+    s4_label: 'Indicator: Critical Part'
+    s4_column: KZKRI
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KZKRI
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: authorization_group_for_activities_in_qm
+    s4_label: Authorization Group for Activities in QM
+    s4_column: QMATA
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: QMATA
+    group: General Data - Quality Management
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_documentation_required
+    s4_label: 'Indicator: Documentation Required'
+    s4_column: KZDKZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KZDKZ
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: inspection_interval_in_days
+    s4_label: Inspection Interval in Days
+    s4_column: PRFRQ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: PRFRQ
+    mandatory: false
+    data_type: Number
+    length: 5
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: quality_management_control_key
+    s4_label: Quality Management Control Key
+    s4_column: SSQSS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SSQSS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: certificate_type
+    s4_label: Certificate Type
+    s4_column: QZGTP
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: QZGTP
+    group: Quality Management - Procurement Data
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: target_qm_system
+    s4_label: Target QM System
+    s4_column: QSSYS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: QSSYS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: export_import_group
+    s4_label: Export/Import Group
+    s4_column: MTVER
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MTVER
+    group: International Trade
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: country_region_of_origin
+    s4_label: Country/Region of Origin
+    s4_column: HERKL
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: HERKL
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: region_of_origin
+    s4_label: Region of Origin
+    s4_column: HERKR
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: HERKR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: taxes_in_international_trade
+    s4_label: Taxes in International Trade
+    s4_column: STEUC
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: STEUC
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: material_cfop_category
+    s4_label: Material CFOP Category
+    s4_column: INDUS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: INDUS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: purchasing_group
+    s4_label: Purchasing Group
+    s4_column: EKGRP
+    ecc_column: null
+    ecc_source:
+      table: con_dev.s4_mdm.ekgrp_updated
+      field: EKGRP
+    group: Purchasing
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_post_to_inspection_stock
+    s4_label: 'Indicator: Post to Inspection Stock'
+    s4_column: INSMK
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: INSMK
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_source_list_required
+    s4_label: 'Indicator: Source List Required'
+    s4_column: KORDB
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KORDB
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_autom_purchase_oder_allowed
+    s4_label: 'Indicator: Autom. Purchase Oder Allowed'
+    s4_column: KAUTB
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KAUTB
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: tax_indicator
+    s4_label: Tax Indicator
+    s4_column: TAXIM
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: TAXIM
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: abc_indicator
+    s4_label: ABC Indicator
+    s4_column: MAABC
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MAABC
+    group: MRP Data
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: mrp_group
+    s4_label: MRP Group
+    s4_column: DISGR
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: DISGR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: strategy_group
+    s4_label: Strategy Group
+    s4_column: STRGR
+    ecc_column: null
+    ecc_source:
+      table: MARA
+      field: STRGR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: reorder_point
+    s4_label: Reorder Point
+    s4_column: MINBE
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MINBE
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planning_time_fence
+    s4_label: Planning Time Fence
+    s4_column: FXHOR
+    ecc_column: null
+    ecc_source:
+      table: MARA
+      field: FXHOR
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planning_cycle
+    s4_label: Planning Cycle
+    s4_column: LFRHY
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LFRHY
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: consumption_mode
+    s4_label: Consumption Mode
+    s4_column: VRMOD
+    ecc_column: null
+    ecc_source:
+      table: MARA
+      field: VRMOD
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: consumption_period_backward
+    s4_label: 'Consumption Period: Backward'
+    s4_column: VINT1
+    ecc_column: null
+    ecc_source:
+      table: MARA
+      field: VINT1
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: consumption_period_forward
+    s4_label: 'Consumption Period: Forward'
+    s4_column: VINT2
+    ecc_column: null
+    ecc_source:
+      table: MARA
+      field: VINT2
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: mixed_mrp_indicator
+    s4_label: Mixed MRP Indicator
+    s4_column: MISKZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MISKZ
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planning_product
+    s4_label: Planning Product
+    s4_column: PRGRP
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PRGRP
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planning_plant
+    s4_label: Planning Plant
+    s4_column: PRWRK
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PRWRK
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: plng_conv_factor
+    s4_label: Plng. Conv. Factor
+    s4_column: UMREF
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: UMREF
+    mandatory: false
+    data_type: Text
+    length: 10
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: lot_sizing_procedure
+    s4_label: Lot Sizing Procedure
+    s4_column: DISLS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: DISLS
+    group: MRP Lot-Size Data
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: minimum_lot_size
+    s4_label: Minimum Lot Size
+    s4_column: BSTMI
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: BSTMI
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: maximum_lot_size
+    s4_label: Maximum Lot Size
+    s4_column: BSTMA
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: BSTMA
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: fixed_lot_size
+    s4_label: Fixed Lot Size
+    s4_column: BSTFE
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: BSTFE
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: storage_cost_indicator
+    s4_label: Storage Cost Indicator
+    s4_column: LAGPR
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LAGPR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: lot_size_independant_cost
+    s4_label: Lot Size Independant Cost
+    s4_column: LOSFX
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LOSFX
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: currency_for_lot_size_ind_cost
+    s4_label: Currency for Lot Size Ind. Cost
+    s4_column: WAERS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: WAERS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: assembly_scrap
+    s4_label: Assembly Scrap (%)
+    s4_column: AUSSS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: AUSSS
+    mandatory: false
+    data_type: Number
+    length: 5
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: maximum_stock_level
+    s4_label: Maximum Stock Level
+    s4_column: MABST
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MABST
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: rounding_value
+    s4_label: Rounding Value
+    s4_column: BSTRF
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: BSTRF
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: takt_time
+    s4_label: Takt Time
+    s4_column: TAKZT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: TAKZT
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: rounding_profile
+    s4_label: Rounding Profile
+    s4_column: RDPRF
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: RDPRF
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: unit_of_measure_group
+    s4_label: Unit of Measure Group
+    s4_column: MEGRU
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MEGRU
+    group: MRP Lot-Size Data (Retail)
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: safety_stock
+    s4_label: Safety Stock
+    s4_column: EISBE
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: EISBE
+    group: Net Requirement Calculation
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: minimum_safety_stock
+    s4_label: Minimum Safety Stock
+    s4_column: EISLO
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: EISLO
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: safety_time_in_workdays
+    s4_label: Safety Time (in Workdays)
+    s4_column: SHZET
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SHZET
+    mandatory: false
+    data_type: Number
+    length: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: service_level_warehouse
+    s4_label: Service Level Warehouse
+    s4_column: LGRAD
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LGRAD
+    mandatory: false
+    data_type: Number
+    length: 3
+    decimal: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: coverage_profile
+    s4_label: Coverage Profile
+    s4_column: RWPRO
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: RWPRO
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: safety_time_indicator
+    s4_label: Safety Time Indicator
+    s4_column: SHFLG
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SHFLG
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: safety_time_period_profile
+    s4_label: Safety Time Period Profile
+    s4_column: SHPRO
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SHPRO
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: mrp_relevancy_for_dependent_requirements
+    s4_label: MRP Relevancy for Dependent Requirements
+    s4_column: AHDIS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: AHDIS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: safety_stock_method
+    s4_label: Safety Stock Method
+    s4_column: SFTY_STK_METH
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SFTY_STK_METH
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: individual_collective_requirements
+    s4_label: Individual / Collective Requirements
+    s4_column: SBDKZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SBDKZ
+    group: BOM Explosion/Dependent Requirements
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: component_scrap_in_percent
+    s4_label: Component Scrap in Percent
+    s4_column: KAUSF
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KAUSF
+    mandatory: false
+    data_type: Number
+    length: 5
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: requirements_group
+    s4_label: Requirements Group
+    s4_column: KZBED
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KZBED
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: discontinuation_ind
+    s4_label: Discontinuation Ind.
+    s4_column: KZAUS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KZAUS
+    group: Discontinued Parts
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: effective_out_date
+    s4_label: Effective-Out Date
+    s4_column: AUSDT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: AUSDT
+    mandatory: false
+    data_type: Date
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: follow_up_product
+    s4_label: Follow-Up Product
+    s4_column: NFMAT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: NFMAT
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_repetitive_manufa_allow
+    s4_label: 'Indicator: Repetitive Manufa. Allow'
+    s4_column: SAUFT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SAUFT
+    group: Repetitive Manufacturing/Assembly/Deployment Strategy
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: repetitive_manufacturing_profile
+    s4_label: Repetitive Manufacturing Profile
+    s4_column: SFEPR
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SFEPR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: procurement_type
+    s4_label: Procurement Type
+    s4_column: BESKZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: BESKZ
+    group: MRP Procurement
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: special_procurement_type
+    s4_label: Special Procurement Type
+    s4_column: SOBSL
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SOBSL
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: issue_storage_location
+    s4_label: Issue Storage Location
+    s4_column: LGPRO
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LGPRO
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: replenishment_lead_time
+    s4_label: Replenishment Lead Time
+    s4_column: WZEIT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: WZEIT
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: cross_project
+    s4_label: Cross-Project
+    s4_column: KZPSP
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KZPSP
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: default_storage_loc_for_ext_procuremet
+    s4_label: Default Storage Loc. for Ext. Procuremet
+    s4_column: LGFSB
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LGFSB
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planning_calendar
+    s4_label: Planning Calendar
+    s4_column: MRPPP
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MRPPP
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: in_house_production_time
+    s4_label: In-House Production Time
+    s4_column: DZEIT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: DZEIT
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planned_delivery_time
+    s4_label: Planned Delivery Time
+    s4_column: PLIFZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: PLIFZ
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: goods_receipt_processing_time_webaz
+    s4_label: Goods Receipt Processing Time
+    s4_column: WEBAZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: WEBAZ
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: backflush
+    s4_label: Backflush
+    s4_column: RGEKZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: RGEKZ
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: default_supply_area
+    s4_label: Default Supply Area
+    s4_column: VSPVB
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: VSPVB
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: jit_delivery_sched
+    s4_label: JIT Delivery Sched.
+    s4_column: FABKZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: FABKZ
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_bulk_material
+    s4_label: 'Indicator: Bulk Material'
+    s4_column: SCHGT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SCHGT
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: scheduling_margin_key
+    s4_label: Scheduling Margin Key
+    s4_column: FHORI
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: FHORI
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: pp_planning_procedure
+    s4_label: PP Planning Procedure
+    s4_column: SCM_RRP_TYPE
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_RRP_TYPE
+    group: Advanced Planning
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: ppc_heuristics
+    s4_label: PPC Heuristics
+    s4_column: SCM_HEUR_ID
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_HEUR_ID
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planning_group
+    s4_label: Planning Group
+    s4_column: SCM_RRP_SEL_GROUP
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_RRP_SEL_GROUP
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planning_package
+    s4_label: Planning Package
+    s4_column: SCM_PACKAGE_ID
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_PACKAGE_ID
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: lot_size_unit_iso_format
+    s4_label: Lot Size Unit (ISO Format)
+    s4_column: SCM_LSUOM
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_LSUOM
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: target_days_supply
+    s4_label: Target Days' Supply
+    s4_column: SCM_TARGET_DUR
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_TARGET_DUR
+    mandatory: false
+    data_type: Number
+    length: 11
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: reorder_days_supply
+    s4_label: Reorder Days' Supply
+    s4_column: SCM_REORD_DUR
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_REORD_DUR
+    mandatory: false
+    data_type: Number
+    length: 11
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: period_lot_sizing_planning_calendar
+    s4_label: Period Lot Sizing Planning Calendar
+    s4_column: SCM_TSTRID
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_TSTRID
+    mandatory: false
+    data_type: Text
+    length: 10
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: goods_receipt_processing_time_scm_grprt
+    s4_label: Goods Receipt Processing Time
+    s4_column: SCM_GRPRT
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_GRPRT
+    mandatory: false
+    data_type: Number
+    length: 11
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: gr_handling_capacity_bucket_consumption
+    s4_label: GR Handling Capacity Bucket Consumption
+    s4_column: SCM_CONHAP
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_CONHAP
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: uom_handling_capacity_in_gr_iso_format
+    s4_label: UoM:Handling Capacity in GR (ISO Format)
+    s4_column: SCM_HUNIT
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_HUNIT
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: goods_issue_processing_time_scm_giprt
+    s4_label: Goods Issue Processing Time
+    s4_column: SCM_GIPRT
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_GIPRT
+    mandatory: false
+    data_type: Number
+    length: 11
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: gi_handling_capacity_bucket_consumption
+    s4_label: GI Handling Capacity Bucket Consumption
+    s4_column: SCM_CONHAP_OUT
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_CONHAP_OUT
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: uom_handling_capacity_in_gi_iso_format
+    s4_label: UoM:Handling Capacity in GI (ISO Format)
+    s4_column: SCM_HUNIT_OUT
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: SCM_HUNIT_OUT
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: period_type
+    s4_label: Period Type
+    s4_column: PERKZ
+    ecc_column: null
+    ecc_source:
+      table: MARA
+      field: PERKZ
+    group: Forecasting
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: fiscal_year_variant
+    s4_label: Fiscal Year Variant
+    s4_column: PERIV
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: PERIV
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: splitting_indicator
+    s4_label: Splitting Indicator
+    s4_column: AUFTL
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: AUFTL
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: reference_plant_for_consumption
+    s4_label: Reference Plant for Consumption
+    s4_column: VRBWK
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: VRBWK
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: reference_product_for_consumption
+    s4_label: Reference Product for Consumption
+    s4_column: VRBMT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: VRBMT
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: use_referenced_consumption_data_until
+    s4_label: Use Referenced Consumption Data Until
+    s4_column: VRBDT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: VRBDT
+    mandatory: false
+    data_type: Date
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: multiplier_for_reference_product
+    s4_label: Multiplier for Reference Product
+    s4_column: VRBFK
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: VRBFK
+    mandatory: false
+    data_type: Number
+    length: 4
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_reset_forecast_model_auto
+    s4_label: 'Indicator: Reset Forecast Model Auto'
+    s4_column: AUTRU
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: AUTRU
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_correction_factors
+    s4_label: 'Indicator: Correction Factors'
+    s4_column: KZKFK
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: KZKFK
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: base_quantity
+    s4_label: Base Quantity
+    s4_column: BASMG
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: BASMG
+    group: Work Scheduling
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: overdelivery_tolerance_limit
+    s4_label: Overdelivery Tolerance Limit
+    s4_column: UEETO
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: UEETO
+    mandatory: false
+    data_type: Number
+    length: 3
+    decimal: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: underdelivery_tolerance_limit
+    s4_label: Underdelivery Tolerance Limit
+    s4_column: UNETO
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: UNETO
+    mandatory: false
+    data_type: Number
+    length: 3
+    decimal: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_unlim_overdelivery_allowed
+    s4_label: 'Indicator: Unlim. Overdelivery Allowed'
+    s4_column: UEETK
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: UEETK
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: production_unit_iso_format
+    s4_label: Production Unit (ISO Format)
+    s4_column: FRTME
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: FRTME
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: production_supervisor
+    s4_label: Production Supervisor
+    s4_column: FEVOR
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: FEVOR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: production_scheduling_profile
+    s4_label: Production Scheduling Profile
+    s4_column: SFCPF
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SFCPF
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: setup_and_teardown_time
+    s4_label: Setup and Teardown Time
+    s4_column: RUEZT
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: RUEZT
+    mandatory: false
+    data_type: Number
+    length: 5
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: interoperation_time
+    s4_label: Interoperation Time
+    s4_column: TRANZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: TRANZ
+    mandatory: false
+    data_type: Number
+    length: 5
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: processing_time
+    s4_label: Processing Time
+    s4_column: BEARZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: BEARZ
+    mandatory: false
+    data_type: Number
+    length: 5
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: cycle_counting_indicator
+    s4_label: Cycle Counting Indicator
+    s4_column: ABCIN
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: ABCIN
+    group: Storage Locations
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_cycle_counting_fixed
+    s4_label: 'Indicator: Cycle Counting Fixed'
+    s4_column: CCFIX
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: CCFIX
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: do_not_cost
+    s4_label: Do Not Cost
+    s4_column: NCOST
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: NCOST
+    group: Costing 1 - General Data
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: variance_key
+    s4_label: Variance Key
+    s4_column: AWSLS
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: AWSLS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: costing_lot_size
+    s4_label: Costing Lot Size
+    s4_column: LOSGR
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LOSGR
+    group: Costing 1 - Quantity Structure Data
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: maximum_storage_period
+    s4_label: Maximum Storage Period
+    s4_column: MAXLZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MAXLZ
+    group: Storage 1 - General Data
+    mandatory: false
+    data_type: Number
+    length: 5
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: unit_for_maximum_storage_period
+    s4_label: Unit for Maximum Storage Period
+    s4_column: LZEIH
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: LZEIH
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: shipping_setup_time
+    s4_label: Shipping Setup Time
+    s4_column: VRVEZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: VRVEZ
+    group: Shipping Data (Times in Days)
+    mandatory: false
+    data_type: Number
+    length: 5
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: shipping_processing_time
+    s4_label: Shipping Processing Time
+    s4_column: VBEAZ
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: VBEAZ
+    mandatory: false
+    data_type: Number
+    length: 5
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: base_quantity_for_capacity_planning
+    s4_label: Base Quantity for Capacity Planning
+    s4_column: VBAMG
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: VBAMG
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: distribution_profile
+    s4_label: Distribution Profile
+    s4_column: FPRFM
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: FPRFM
+    group: Distribution Center - Stores Data (Retail)
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: source_of_supply
+    s4_label: Source of Supply
+    s4_column: BWSCL
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: BWSCL
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: consignment_control
+    s4_label: Consignment Control
+    s4_column: CONS_PROCG
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: CONS_PROCG
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_pur_accross_purchasing_group
+    s4_label: 'Indicator: Pur. Accross Purchasing Group'
+    s4_column: MULTIPLE_EKGRP
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: MULTIPLE_EKGRP
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: goods_issue_processing_time_gi_pr_time
+    s4_label: Goods Issue Processing Time
+    s4_column: GI_PR_TIME
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: GI_PR_TIME
+    mandatory: false
+    data_type: Number
+    length: 3
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: service_level
+    s4_label: Service Level
+    s4_column: SERVG
+    ecc_column: null
+    ecc_source:
+      table: MARC
+      field: SERVG
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_storage
+    s4_label: 'Indicator: Storage'
+    s4_column: PSTATL
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PSTATL
+    group: Select Views/Maintenance Status
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_work_scheduling
+    s4_label: 'Indicator: Work Scheduling'
+    s4_column: PSTATA
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PSTATA
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_purchasing
+    s4_label: 'Indicator: Purchasing'
+    s4_column: PSTATE
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PSTATE
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_quality
+    s4_label: 'Indicator: Quality'
+    s4_column: PSTATQ
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PSTATQ
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_sales
+    s4_label: 'Indicator: Sales'
+    s4_column: PSTATV
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PSTATV
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration

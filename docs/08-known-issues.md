@@ -4,41 +4,49 @@
 > established**:
 > **Reproduced** = I ran the code and saw it; **Observed** = seen in the committed
 > data or live SharePoint listing; **Code-read** = follows from reading the source
-> (not executed). Nothing in the codebase was modified to produce this document.
+> (not executed). Nothing in the codebase was modified to produce this document;
+> fixes applied afterwards are marked **Fixed** / **Addressed** in the summary table (the
+> sections below still describe the original problem). The agentic restructure is described
+> in [09](09-agentic-architecture.md).
 
 ## Summary
 
 | # | Issue | Severity | Evidence |
 |---|---|---|---|
-| [1](#1-openpyxl-is-missing-from-requirementstxt) | `openpyxl` missing from `requirements.txt` | **High** — fresh installs break ECC fetch, downloads, xlsx upload | Code-read |
-| [2](#2-validation-cannot-match-the-committed-data-header-and-value-mismatch) | Validation can't match the committed data (headers *and* key values) | **High** — the Validation tab cannot currently produce a meaningful result | Reproduced |
-| [3](#3-rule-6-crashes-on-duplicate-keys) | Rule 6 crashes (HTTP 500) when either file has duplicate keys | **High** once #2 is fixed | Reproduced |
-| [4](#4-a-fetch-that-matches-no-files-overwrites-the-good-csv-with-an-empty-one) | A fetch matching no files overwrites the good CSV with an empty one; later preview 500s | Medium | Reproduced (pandas behaviour) |
-| [5](#5-fetch-does-not-preserve-text-formatting-dtypestr) | Fetch doesn't preserve text formatting (`dtype=str`) | Medium | Observed + Code-read |
-| [6](#6-condition_notes-are-loaded-but-unused-and-row-counts-are-compared-strictly) | `condition_notes` unused; strict row-count equality | Medium | Code-read |
+| [1](#1-openpyxl-was-missing-from-requirementstxt-fixed) | ~~`openpyxl` missing from `requirements.txt`~~ | **Fixed** — `openpyxl==3.1.5` added | Code-read |
+| [2](#2-validation-cannot-match-the-committed-data-header-and-value-mismatch) | Validation can't match the committed data (headers *and* key values) | **Addressed** — YAML names both columns; Agent 1 proposes aliases, key normalisation and crosswalk (see [09](09-agentic-architecture.md)) | Reproduced |
+| [3](#3-rule-6-crashes-on-duplicate-keys) | Rule 6 crashes (HTTP 500) when either file has duplicate keys | **Fixed** — unique keys only; rules isolated | Reproduced |
+| [4](#4-a-fetch-that-matches-no-files-overwrites-the-good-csv-with-an-empty-one) | A fetch matching no files overwrites the good CSV with an empty one; later preview 500s | **Fixed** — dataset reported as error, current version kept | Reproduced (pandas behaviour) |
+| [5](#5-fetch-does-not-preserve-text-formatting-dtypestr) | Fetch doesn't preserve text formatting (`dtype=str`) | **Fixed** — all reads are text-only | Observed + Code-read |
+| [6](#6-condition_notes-are-loaded-but-unused-and-row-counts-are-compared-strictly) | `condition_notes` unused; strict row-count equality | **Partly addressed** — structured filters + fan-out in the YAML; the unexplained row gap remains open | Code-read |
 | [7](#7-no-authentication-and-verbose-errors) | No authentication; verbose errors; wide-open data endpoints | Medium (High if exposed) | Code-read |
-| [8](#8-robustness-of-the-sharepoint-client) | No timeouts; auth failures reported as 502; `.xls` unsupported | Low–Medium | Code-read |
-| [9](#9-rule-implementation-gaps) | Rule gaps (false positives on pandas 2.2, unchecked precision, ECC dupes) | Low–Medium | Code-read |
-| [10](#10-input-validation-on-family-and-source_type) | `family`/`source_type` not allow-listed on download | Low | Code-read |
+| [8](#8-robustness-of-the-sharepoint-client) | No timeouts; auth failures reported as 502; `.xls` unsupported | **Mostly fixed** — timeouts, 429/503 retry, `.xls` no longer matched | Code-read |
+| [9](#9-rule-implementation-gaps) | Rule gaps (false positives on pandas 2.2, unchecked precision, ECC dupes) | **Mostly fixed** — blank handling on text reads, `number`/`date` compares, ECC duplicate keys reported | Code-read |
+| [10](#10-input-validation-on-family-and-source_type) | `family`/`source_type` not allow-listed on download | **Fixed** — object and side are checked | Code-read |
 | [11](#11-performance-and-scaling) | Whole-file reads/in-memory workbooks | Low | Code-read |
-| [12](#12-repository-hygiene-and-stale-content) | Committed data & zips, stale README, dead code, UI inconsistencies | Low | Observed |
-| [13](#13-no-tests-no-ci-no-lint) | No tests, CI or lint | Low | Observed |
+| [12](#12-repository-hygiene-and-stale-content) | Committed data & zips, stale README, dead code, UI inconsistencies | **Mostly fixed** — zips and dead code removed, README rewritten, `backend/data/` ignored (the tracked CSVs still need `git rm --cached`) | Observed |
+| [13](#13-no-tests-no-ci-no-lint) | No tests, CI or lint | **Partly fixed** — 35 pytest tests (`backend/tests`); no CI or lint yet | Observed |
 
 ---
 
-## 1. `openpyxl` is missing from `requirements.txt`
+## 1. `openpyxl` was missing from `requirements.txt` (fixed)
+
+> **Fixed:** `openpyxl==3.1.5` is now pinned in `backend/requirements.txt` (uncommitted
+> at the time of writing). 3.1.5 meets pandas 2.2.2's minimum (3.1.0) and supports
+> Python 3.11. Existing environments need `pip install -r requirements.txt` again.
+> The description below records the original problem.
 
 `merge_service.py` calls `pd.read_excel(..., engine="openpyxl")` (ECC fetch) and
 `df.to_excel(..., engine="openpyxl")` (download); `validate.py` reads uploaded
 Excel files; `mapping_loader --rebuild` imports `openpyxl` directly. `requirements.txt`
-does not list it, and pandas does not install it as a dependency.
+did not list it, and pandas does not install it as a dependency.
 
 **Impact:** a fresh environment installed from `requirements.txt` gets HTTP 502
 ("Missing optional dependency 'openpyxl'") on `POST /api/fetch/ecc`, HTTP 500 on
 `GET /api/download/...`, and HTTP 400 on Excel uploads. (The original developer's
 machine evidently had it, since the ECC CSVs exist.)
 
-**Fix:** add a pinned `openpyxl==<version>` line to `backend/requirements.txt`.
+**Fix (applied):** a pinned `openpyxl==3.1.5` line in `backend/requirements.txt`.
 
 ---
 
@@ -277,10 +285,33 @@ tiny frames; a golden test for `_rebuild_from_xlsx` against the committed JSON).
 
 ## Suggested order of work
 
-1. Add `openpyxl` to requirements (#1) — minutes.
+1. ~~Add `openpyxl` to requirements (#1)~~ — done.
 2. Decide the header/key contract with the migration owners and fix the loader or the
    extracts (#2) — this unblocks the Validation tab entirely.
 3. Make Rule 6 duplicate-safe and isolate rule failures (#3).
 4. Guard against empty fetches and use `dtype=str` (#4, #5).
 5. Add auth and sanitise errors before exposing beyond a trusted network (#7).
 6. Tidy the repo: fix `.gitignore`, delete the zips, refresh the README (#12), add tests (#13).
+
+## End-to-end test session (2026-09-30)
+
+A scripted two-pass test covered 21 scenarios, each run as twin UI + API runs on local-source sandboxes. It found 25 incidents. The full reports are kept outside the repo (`RO-Automation-TestRun/`: SUMMARY.md, INCIDENTS.md, FIXES.md).
+
+**Fixed:**
+- Windows file-sharing crash of background jobs (atomic JSON writes).
+- ECC changes not linked to imported fields; ECC renames not followed (now fixed via the dictionary).
+- Reference-table changes producing empty "baseline" change sets.
+- Forced refresh storing duplicate versions.
+- Vanished supporting tables not reported.
+- Re-import re-proposing and re-stamping every rule, and failing on existing filters.
+- Per-plant SQL rule changes not flagged against the workbook.
+- Contradicting ignore/alias ops.
+- Provenance rewritten by alias/length changes.
+- Validation vs shadow-compare count mismatch (one normalisation).
+- Several UI feedback issues: apply progress, stage chips, reasons, percentages, persisted validation, op-card targets.
+
+**Still open, by design or documented:**
+- An ECC plant with no routing branch silently drops its rows (there is no "routing gap" warning yet).
+- Value edits never produce mapping proposals.
+- Workbook conflicts appear on re-import only (a refresh now announces the workbook change).
+- With `LLM_PROVIDER=none`, a consistent re-coding of an already-mapped field only raises a low-agreement warning.

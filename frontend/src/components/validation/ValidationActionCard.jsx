@@ -87,8 +87,8 @@ function ValidationActionCard({ onRunLatest, onRunUpload, isLoading }) {
 
         {mode === "latest" ? (
           <p className="text-xs text-gray-500 max-w-sm">
-            Auto-loads the newest ECC extract and the newest fetched S/4 file
-            for {sheet} from the server.
+            Uses the current stored ECC and S/4 versions of {sheet} (see the
+            Data tab) and the current {sheet} mapping.
           </p>
         ) : (
           <div className="flex flex-wrap gap-4">

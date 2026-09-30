@@ -5,3 +5,7 @@ msal==1.31.0
 requests==2.32.3
 pandas==2.2.2
 python-multipart==0.0.9
+openpyxl==3.1.5
+openai==3.20.0
+ruamel.yaml==0.19.1
+sqlglot==30.20.0

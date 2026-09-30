@@ -1,100 +1,79 @@
 # GyanSys Migration Tool
 
-> **Detailed, up-to-date documentation lives in [`docs/`](docs/README.md).** This
-> README predates the ECC/S4 split, the download endpoint and the Validation tab, so parts
-> of it (endpoint paths, logo filename, "adding a family") are out of date.
+FastAPI + React tool for the SAP ECC → S/4HANA data-migration workflow (MARC plant data, MBEW valuation data). It pulls the ECC and S/4 (Databricks) extracts from SharePoint, keeps a versioned local copy of each, and detects what changed. **Agent 1, the Rule Book agent**, then proposes updates to the YAML mapping. A person approves each change, and the tool generates the rule book and validates ECC → S/4 against the approved mapping.
 
-Layered full-stack app for the ECC → S/4 migration workflow. This milestone
-adds the **Data Fetch** tab: pulling `S_MARC#FreeText` and `S_MBEW#FreeText`
-extracts from the SharePoint "Databricks Files" folder, merging each
-family into one combined CSV, and previewing the result in the UI.
+> Full documentation: [`docs/`](docs/README.md). Start with [09 — Agentic architecture](docs/09-agentic-architecture.md)
+> and [10 — Own logic](docs/10-own-logic.md).
+
+## How it works
+
+```
+Refresh data ─▶ versioned snapshots ─▶ diff (ChangeSet) ─▶ Agent 1 (GPT-5 + tools) ─▶ proposal
+                (current + 2 previous)                                                  │ accept / reject (G1, G2)
+                                                                                        ▼
+                             Validation ◀── Rule book (.xlsx) ◀────────────── YAML mapping (new version)
+```
+
+- **SharePoint** always holds the latest files only. The tool stores each changed download as a version in `backend/data/snapshots/`. It keeps the current version plus 2 previous ones, and zips older versions into `backend/data/archive/`.
+- **The mapping** lives in `backend/mappings/MARC.yaml` and `MBEW.yaml`: columns on both sides, key, transforms, crosswalks, split rules, filters and provenance. It is the single source of truth.
+- **Agent 1** proposes typed operations with a reason, a confidence and evidence. It never edits the YAML itself. Nothing is applied until someone accepts it on the Proposals page.
+- **Own logic:** the Databricks views (`backend/reference_logic/databricks/`) and the business rule workbook can be imported as a proposal. Each rule is scored against the real S/4 output. Once approved, the tool **generates** S_MARC / S_MBEW itself and shadow-compares them with Databricks on the Output page.
 
 ## Structure
 
 ```
-gyansys-migration-tool/
-├── backend/                    FastAPI, layered architecture
-│   ├── app/
-│   │   ├── api/routes/         HTTP endpoints (thin — no business logic)
-│   │   │   └── fetch.py        POST /api/fetch, GET /api/preview/{name}
-│   │   ├── services/           Business logic
-│   │   │   ├── sharepoint_service.py   Graph API auth + list + download
-│   │   │   └── merge_service.py        Combines matching files per group,
-│   │   │                                reads back rows for preview
-│   │   ├── models/             Pydantic schemas (API contracts)
-│   │   ├── core/                Config / settings
-│   │   └── main.py              App entrypoint + CORS
-│   ├── requirements.txt
-│   └── .env.example
-│
-└── frontend/                    Vite + React
-    └── src/
-        ├── components/
-        │   ├── layout/          Header, NavBar, Footer (site chrome)
-        │   └── data-fetch/      FetchActionCard, StatusPanel,
-        │                        SummaryCard, PreviewTable
-        ├── pages/                One page per tab (DataFetchPage, ...)
-        ├── api/                  fetchFromSharePoint() / fetchPreview()
-        └── App.jsx               Routes + layout wiring
-```
-
-## API endpoints
-
-| Method | Path                  | Purpose                                               |
-|--------|------------------------|--------------------------------------------------------|
-| POST   | `/api/fetch`            | Pull + combine files, save locally, return per-file stats |
-| GET    | `/api/preview/{name}`   | Return the first N rows (default 20) of an already-combined file, e.g. `/api/preview/MARC_combined?limit=20` |
-| GET    | `/api/health`            | Basic liveness check                                    |
-
-Interactive docs (Swagger UI) are available at `/docs` once the backend is running.
-
-## Adding a new file family later
-
-To combine another set of files (beyond MARC/MBEW), add one line to
-`GROUPS` in `backend/app/services/merge_service.py` — no other code needs
-to change, and it's automatically previewable too:
-
-```python
-GROUPS = {
-    "MARC_combined": "S_MARC#FreeText",
-    "MBEW_combined": "S_MBEW#FreeText",
-    "MLAN_combined": "S_MLAN#FreeText",   # <- new
-}
+backend/
+  app/
+    connectors/     SharePoint (Microsoft Graph)
+    ingest/ store/  datasets, readers, versioned snapshot store
+    profiling/ diff/ inference/ transforms/   deterministic engines
+    mapping/        YAML model, repository, typed operations
+    agents/         llm gateway (Azure OpenAI), tool loop, rulebook_agent (Agent 1)
+    proposals/ rulebook/ validation/ workflows/
+    api/routes/     refresh, snapshots, changesets, proposals, mappings, rulebook, agent, validate
+  mappings/         MARC.yaml, MBEW.yaml, history/, changelogs   (committed)
+  data/             generated local state                         (git-ignored)
+  scripts/ tests/
+frontend/src/
+  pages/            Data · Changes · Proposals · Mapping · Rule Book · Validation
 ```
 
 ## Running it locally
 
-### Backend
+### Backend (Python 3.11)
+
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate        # Windows
+venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env       # then fill in SP_TENANT_ID / SP_CLIENT_ID / SP_CLIENT_SECRET
+copy .env.example .env        # SharePoint credentials + AZURE_OPENAI_* for Agent 1
 uvicorn app.main:app --reload --port 8000
 ```
 
+- Set `LLM_PROVIDER=none` to run Agent 1 without a model (deterministic proposals only).
+- Swagger UI is at `http://localhost:8000/docs`.
+
 ### Frontend
+
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev                   # http://localhost:5173
 ```
 
-Open http://localhost:5173 — the "Data Fetch" tab is the default landing page.
+Open **Data** and click **Refresh data**. Then go to **Mapping → Import as proposal**, review it on **Proposals**, and generate on **Output**.
 
-## Notes
+### Tests
 
-- The logo import in `Header.jsx` expects a file at
-  `frontend/src/assets/logo.png`. If you swap in the real GyanSys logo
-  under a different filename, update the `import logo from "..."` line in
-  `Header.jsx` to match.
-- The client secret goes in `backend/.env` (never committed — see
-  `.gitignore`). Rotate any secret that has ever been pasted in plaintext
-  anywhere outside that file.
-- `SP_SITE_PATH` / `SP_FOLDER_PATH` in `.env` point at the
-  "RO SharePoint Automation" site's "Databricks Files" folder by default —
-  update if the source location changes.
-- Combined CSVs are written to `backend/data/combined/` and are what the
-  preview endpoint reads from — run a fetch at least once before trying
-  to preview.
+```bash
+cd backend
+pip install -r requirements-dev.txt
+python -m pytest tests
+```
+
+## Adding a migration object
+
+1. Add its two rows (ECC and S4) to `SOURCES` in `backend/app/ingest/sources.py`.
+2. Add a `backend/mappings/<OBJECT>.yaml`.
+3. Allow the object in the validate route's `SheetName`.

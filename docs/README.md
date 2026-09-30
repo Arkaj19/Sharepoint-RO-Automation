@@ -2,22 +2,20 @@
 
 Documentation for the **Sharepoint-RO-Automation** repository: a FastAPI + React app that
 pulls SAP ECC and S/4 (Databricks) MARC/MBEW extracts from SharePoint via Microsoft Graph,
-merges them into combined CSVs, and validates the ECC → S/4 conversion against a
-field-mapping workbook.
+keeps versioned local copies, lets **Agent 1 (Rule Book agent)** propose YAML mapping updates
+for human approval, generates the rule book and validates the ECC → S/4 conversion.
 
-Written against commit `731e6cd` (2026-09-29). It supersedes the root `README.md`, which is
-partly out of date (see [known issue #12](08-known-issues.md#12-repository-hygiene-and-stale-content)).
+Docs 01–08 were written against commit `731e6cd`, before the agentic restructure.
+[09 — Agentic architecture](09-agentic-architecture.md) describes the current codebase. Where
+they disagree (fetch/merge services, the JSON mapping, `/api/fetch`), 09 is current.
 
 ## Read this first
 
-> **The Validation tab does not currently produce a meaningful result on the committed
-> data.** The validator expects ECC files with technical field names and S/4 files with
-> friendly names; the real files are the other way round, and the key values (material
-> padding, plant codes) also differ. Every mapped field is reported missing.
-> See [known issue #2](08-known-issues.md#2-validation-cannot-match-the-committed-data-header-and-value-mismatch).
->
-> Also: `openpyxl` is required but missing from `requirements.txt`
-> ([issue #1](08-known-issues.md#1-openpyxl-is-missing-from-requirementstxt)).
+> **Validation now works on the real data.** The explicit ECC/S4 columns in the YAML mapping,
+> the key normalisation and the crosswalk are what Agent 1 bootstraps. Once those are approved,
+> keys align (≈ 24 k MARC keys match on the live extracts) and values are compared field by
+> field. See [known issue #2](08-known-issues.md#2-validation-cannot-match-the-committed-data-header-and-value-mismatch)
+> for the history.
 
 ## Contents
 
@@ -31,35 +29,33 @@ partly out of date (see [known issue #12](08-known-issues.md#12-repository-hygie
 | 06 | [Frontend reference](06-frontend.md) | work on the React app — routing, state, components, API client |
 | 07 | [Data, mapping and file formats](07-data-and-mapping.md) | know what's on SharePoint, the mapping schema, and what the committed data looks like |
 | 08 | [Known issues and recommendations](08-known-issues.md) | see verified defects, risks, and a suggested order of fixes |
+| 09 | [Agentic architecture and Agent 1](09-agentic-architecture.md) | **the current structure**: snapshots, diff, YAML mapping, Agent 1, proposals, rule book, API |
+| 10 | [Own logic: import, generation, shadow run](10-own-logic.md) | how the Databricks SQL and the rule workbook become our rules, how the tool generates S/4 data itself, and how it compares with Databricks |
 
 ## Quick start
 
 ```bash
-# Backend (from backend/, Python 3.11 recommended)
+# Backend (from backend/, Python 3.11)
 python -m venv venv && venv\Scripts\activate
-pip install -r requirements.txt openpyxl
-copy .env.example .env        # fill in SP_TENANT_ID / SP_CLIENT_ID / SP_CLIENT_SECRET
+pip install -r requirements.txt
+copy .env.example .env        # SP_* credentials and AZURE_OPENAI_* for Agent 1
 uvicorn app.main:app --reload --port 8000
 
 # Frontend (from frontend/)
-npm install && npm run dev    # http://localhost:5173
+npm install && npm run dev    # http://localhost:5173  ->  Data -> "Refresh data"
 ```
 
 ## At a glance
 
 ```
-Browser (React, :5173) ──REST──▶ FastAPI (:8000) ──Graph──▶ SharePoint
-                                     │
-                                     └── backend/data/combined/{MARC,MBEW}/{ECC,S4}/*_combined.csv
+Browser (React, :5173) --REST--> FastAPI (:8000) --Graph--> SharePoint (latest files only)
+                                     |
+                                     +-- backend/data/snapshots/<OBJ>/<SIDE>/<version>/   current + 2 previous
+                                     +-- backend/data/{changesets,proposals,agent_runs,rulebooks}/
+                                     +-- backend/mappings/<OBJ>.yaml                       the mapping (committed)
 ```
 
-| Endpoint | Purpose |
-|---|---|
-| `POST /api/fetch/ecc` · `POST /api/fetch/s4` | pull + merge source files, save combined CSVs |
-| `GET /api/preview/{family}/{source_type}` | first N rows of a combined CSV |
-| `GET /api/download/{family}/{source_type}` | combined CSV as `.xlsx` |
-| `GET /api/validate/latest?sheet=` · `POST /api/validate/upload?sheet=` | run the six validation rules |
-| `GET /api/health` | liveness |
+See [09 §9](09-agentic-architecture.md#9-api) for the full endpoint list.
 
 ## How these docs were verified
 

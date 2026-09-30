@@ -1,0 +1,680 @@
+schema_version: 1
+object: MBEW
+title: Valuation Data
+s4_sheet: S_MBEW
+mapping_version: 1
+content_hash: sha256:e07f7beb23943dbe649119261b967c98373592ddf8b80e0dfac12d9a2b54286e
+updated_at: '2026-09-29T12:48:42Z'
+updated_by: migration
+key:
+  fields:
+    - product_number
+    - valuation_area
+  provenance:
+    status: migrated
+    confidence: 1.0
+    reason: Workbook 'Key' field plus the plant / valuation-area level key
+    source: migration
+filters: []
+raw_condition_notes: |-
+  INNER CONDITION:
+
+  • MARC.LVORM IS NULL
+  • MARC.WERKS = '1021'
+  • MARC.LVORM IS NULL
+  • MARC.WERKS = '1021'
+
+  • MBEW.LVORM IS NULL
+  • MARA.LVORM IS NULL
+  • MBEW.MATNR IN (
+      SELECT DISTINCT MATNR
+      FROM con_dev.silver_sap.mara_dap
+      WHERE MTART <> 'UNBW'
+        AND LVORM IS NULL
+    )
+  • base.DERIVED_WERKS <> '1021'
+  • MBEW.BWKEY = '1021'
+
+  OUTER CONDITION:
+
+  • No Outer WHERE Condition
+value_maps: {}
+ignored_columns:
+  ecc: []
+  s4: []
+fields:
+  - id: product_number
+    s4_label: Product Number
+    s4_column: PRODUCT
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: PRODUCT
+    group: Key
+    mandatory: true
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: valuation_area
+    s4_label: Valuation Area
+    s4_column: BWKEY
+    ecc_column: null
+    ecc_source:
+      table: MARC (via BASE CTE)
+      field: BWKEY
+    mandatory: true
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: valuation_type
+    s4_label: Valuation Type
+    s4_column: BWTAR
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: BWTAR
+    mandatory: false
+    data_type: Text
+    length: 10
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: valuation_category
+    s4_label: Valuation Category
+    s4_column: BWTTY
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: BWTTY
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: price_control_determination
+    s4_label: Price Control Determination
+    s4_column: MLAST
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: MLAST
+    group: General Information
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: valuation_class
+    s4_label: Valuation Class
+    s4_column: BKLAS
+    ecc_column: null
+    ecc_source:
+      table: MARA
+      field: BKLAS
+    mandatory: true
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: valuation_class_for_sales_order
+    s4_label: Valuation Class for Sales Order
+    s4_column: EKLAS
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: EKLAS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: valuation_class_for_project_stock
+    s4_label: Valuation Class for Project Stock
+    s4_column: QKLAS
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: QKLAS
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: price_control
+    s4_label: Price Control
+    s4_column: VPRSV
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: VPRSV
+    group: Valuation Current Period
+    mandatory: true
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: currency
+    s4_label: Currency
+    s4_column: WAERS
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: WAERS
+    mandatory: true
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: inventory_price_moving_average
+    s4_label: Inventory Price Moving Average
+    s4_column: VERPR
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: VERPR
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: inventory_price_standard_price
+    s4_label: Inventory Price Standard Price
+    s4_column: STPRS
+    ecc_column: null
+    ecc_source:
+      table: MBEW, MARA, MARM
+      field: STPRS
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: price_unit_peinh
+    s4_label: Price Unit
+    s4_column: PEINH
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: PEINH
+    mandatory: false
+    data_type: Number
+    length: 5
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: future_price
+    s4_label: Future Price
+    s4_column: ZKPRS
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: ZKPRS
+    group: Future Price
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: date_of_which_future_price_is_valid_from
+    s4_label: Date of Which Future Price Is Valid From
+    s4_column: ZKDAT
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: ZKDAT
+    mandatory: false
+    data_type: Date
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planned_price_1
+    s4_label: Planned Price 1
+    s4_column: ZPLP1
+    ecc_column: null
+    ecc_source:
+      table: MBEW, MARA
+      field: ZPLP1
+    group: Other Prices - Planned Prices
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planned_price_date_1
+    s4_label: Planned Price Date 1
+    s4_column: ZPLD1
+    ecc_column: null
+    ecc_source:
+      field: ZPLD1
+    mandatory: false
+    data_type: Date
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planned_price_2
+    s4_label: Planned Price 2
+    s4_column: ZPLP2
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: ZPLP2
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planned_price_date_2
+    s4_label: Planned Price Date 2
+    s4_column: ZPLD2
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: ZPLD2
+    mandatory: false
+    data_type: Date
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planned_price_3
+    s4_label: Planned Price 3
+    s4_column: ZPLP3
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: ZPLP3
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: planned_price_date_3
+    s4_label: Planned Price Date 3
+    s4_column: ZPLD3
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: ZPLD3
+    mandatory: false
+    data_type: Date
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: tax_price_1
+    s4_label: Tax Price 1
+    s4_column: BWPRS
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: BWPRS
+    group: Determination of Lowest Value - Tax
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: tax_price_2
+    s4_label: Tax Price 2
+    s4_column: BWPS1
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: BWPS1
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: tax_price_3
+    s4_label: Tax Price 3
+    s4_column: VJBWS
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: VJBWS
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: price_unit_bwpei
+    s4_label: Price Unit
+    s4_column: BWPEI
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: BWPEI
+    mandatory: false
+    data_type: Number
+    length: 5
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: commercial_price_1
+    s4_label: Commercial Price 1
+    s4_column: BWPRH
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: BWPRH
+    group: Determination of Lowest Value - Commercial
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: commercial_price_2
+    s4_label: Commercial Price 2
+    s4_column: BWPH1
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: BWPH1
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: commercial_price_3
+    s4_label: Commercial Price 3
+    s4_column: VJBWH
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: VJBWH
+    mandatory: false
+    data_type: Number
+    length: 13
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: lifo_fifo_relevant
+    s4_label: LIFO/FIFO Relevant
+    s4_column: XLIFO
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: XLIFO
+    group: LIFO/FIFO Relevant
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: lifo_pool
+    s4_label: LIFO Pool
+    s4_column: MYPOL
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: MYPOL
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: devaluation_indicator
+    s4_label: Devaluation Indicator
+    s4_column: ABWKZ
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: ABWKZ
+    mandatory: false
+    data_type: Number
+    length: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: usage_of_the_product
+    s4_label: Usage of the Product
+    s4_column: MTUSE
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: MTUSE
+    group: Determination of CFOP Code
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: origin_of_the_product
+    s4_label: Origin of the Product
+    s4_column: MTORG
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: MTORG
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_produced_in_house
+    s4_label: 'Indicator: Produced In-House'
+    s4_column: OWPNR
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: OWPNR
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: product_related_origin
+    s4_label: Product-Related Origin
+    s4_column: HKMAT
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: HKMAT
+    group: Costing - General Data
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_with_qty_structure
+    s4_label: 'Indicator: With Qty Structure'
+    s4_column: EKALR
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: EKALR
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: origin_group
+    s4_label: Origin Group
+    s4_column: HRKFT
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: HRKFT
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: overhead_group
+    s4_label: Overhead Group
+    s4_column: KOSGR
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: KOSGR
+    mandatory: false
+    data_type: Text
+    length: 80
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: valuation_margin
+    s4_label: Valuation Margin
+    s4_column: BWSPA
+    ecc_column: null
+    ecc_source:
+      table: MBEW
+      field: BWSPA
+    group: Reference Values (Retail)
+    mandatory: false
+    data_type: Number
+    length: 6
+    decimal: 2
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_accounting
+    s4_label: 'Indicator: Accounting'
+    s4_column: PSTATB
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PSTATB
+    group: Select Views/Maintenance Status
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration
+  - id: indicator_costing
+    s4_label: 'Indicator: Costing'
+    s4_column: PSTATG
+    ecc_column: null
+    ecc_source:
+      table: N/A
+      field: PSTATG
+    mandatory: false
+    data_type: Text
+    length: 1
+    provenance:
+      status: migrated
+      confidence: 1.0
+      reason: S/4 column matched by technical name from the workbook
+      source: migration

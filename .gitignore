@@ -4,8 +4,9 @@ backend/__pycache__/
 backend/**/__pycache__/
 backend/.env
 
-# Backend generated data
-backend/data/combined/*.csv
+# Backend generated data (snapshots, archive, change sets, proposals, agent runs, rule books)
+backend/data/
+backend/.pytest_cache/
 
 # Frontend
 frontend/node_modules/

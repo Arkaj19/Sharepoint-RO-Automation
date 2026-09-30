@@ -17,7 +17,11 @@ function ValidationSummaryCard({ report }) {
           </h3>
           <p className="text-xs text-gray-500 mt-1">
             Key: {report.key_fields.join(" + ")}
+            {report.mapping_version && ` · mapping v${report.mapping_version}`}
           </p>
+          {report.notes?.map((n) => (
+            <p key={n} className="text-xs text-amber-700 mt-1">{n}</p>
+          ))}
         </div>
         <span
           className={`text-xs font-medium px-3 py-1 rounded-full border ${style.badge}`}

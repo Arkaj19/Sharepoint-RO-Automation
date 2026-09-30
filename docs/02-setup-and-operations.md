@@ -1,5 +1,7 @@
 # 02 — Setup, Configuration and Operations
 
+> **Historical (pre-agentic).** This page describes the codebase at commit `731e6cd`. The fetch/merge services, the JSON mapping and several routes described here have been replaced - see [09 — Agentic architecture](09-agentic-architecture.md) for the current structure.
+
 > Part of the [documentation set](README.md).
 
 ## 1. Prerequisites
@@ -19,18 +21,16 @@ python -m venv venv
 venv\Scripts\activate            # Windows PowerShell/cmd
 # source venv/bin/activate       # macOS/Linux
 pip install -r requirements.txt
-pip install openpyxl             # REQUIRED but missing from requirements.txt — see below
 copy .env.example .env           # then edit .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-> **Do not skip `pip install openpyxl`.** `requirements.txt` does not list it,
-> but the code needs it for: `POST /api/fetch/ecc` (reads `.xlsx`),
-> `GET /api/download/...` (writes `.xlsx`), `POST /api/validate/upload` with
-> Excel files, and `python -m app.services.mapping_loader --rebuild`. Without it
-> ECC fetch returns HTTP 502 with a "Missing optional dependency 'openpyxl'"
-> message and downloads return HTTP 500. See
-> [known issue #1](08-known-issues.md#1-openpyxl-is-missing-from-requirementstxt).
+> `requirements.txt` includes `openpyxl`, which the code needs for
+> `POST /api/fetch/ecc` (reads `.xlsx`), `GET /api/download/...` (writes `.xlsx`),
+> `POST /api/validate/upload` with Excel files, and
+> `python -m app.services.mapping_loader --rebuild`. If you created your venv before
+> it was added, re-run `pip install -r requirements.txt`. See
+> [known issue #1](08-known-issues.md#1-openpyxl-was-missing-from-requirementstxt-fixed).
 
 Verify it is up:
 
@@ -63,6 +63,9 @@ is git-ignored; `.env.example` is the committed template.
 | `SP_ECC_FOLDER_PATH` | `""` (empty = library root) | **no** | Folder holding the **ECC** `.xlsx` extracts. Empty string means "children of `/drive/root`". *Missing from `.env.example`* — add it if ECC files ever move into a sub-folder. |
 | `SP_OUTPUT_DIR` | `./data/combined` | yes | Where combined CSVs are written and read. Relative paths resolve against the process's working directory. |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | yes | The single allowed CORS origin. |
+| `SOURCE_MODE` | `sharepoint` | yes | `local` reads the extracts from `LOCAL_SOURCE_ROOT` instead of SharePoint (testing, offline runs). |
+| `LOCAL_SOURCE_ROOT` | `""` | yes (blank) | Folder that mirrors the library: ECC files at its root, S/4 CSVs in a `Databricks Files` sub-folder. Edits are detected by size + modification time, then SHA-256. |
+| `REFERENCE_LOGIC_DIR` | `""` (= `backend/reference_logic`) | yes (blank) | Folder with the Databricks views (`databricks/*.sql`) and `sap_labels.yaml` used by *Import as proposal*. Point it at a copy to try SQL changes without editing the committed files. |
 
 If `SP_TENANT_ID`/`SP_CLIENT_ID`/`SP_CLIENT_SECRET` are empty, the fetch
 endpoints return HTTP 502 with an MSAL error message (see troubleshooting).
@@ -164,7 +167,6 @@ the app reads only the pre-parsed JSON. After editing the workbook:
 
 ```bash
 cd backend
-pip install openpyxl                       # if not installed
 python -m app.services.mapping_loader --rebuild
 ```
 
@@ -205,7 +207,7 @@ cached across restarts.
 | 502 with `Your given address (https://login.microsoftonline.com/) should consist of an https url with hostname and a minimum of one segment in a path…` | Empty `SP_TENANT_ID` (the `.env` file is missing or not in `backend/`). *(Message observed with a current MSAL release when running with no credentials; wording may differ on the pinned 1.31.0.)* | Create `backend/.env` from `.env.example` and fill it in. (`load_dotenv()` searches upward from `app/core/`, so it finds `backend/.env` regardless of the working directory — only `SP_OUTPUT_DIR` is cwd-sensitive.) |
 | 502 with `403 Client Error: Forbidden` for a Graph URL | App registration lacks (or hasn't had admin consent for) read permission on the site. | Grant an application permission that covers the site and consent. |
 | 502 with `404 Client Error: Not Found` on `…/drive/root:/Databricks Files:/children` | `SP_FOLDER_PATH` doesn't exist in the site's default library, or `SP_SITE_PATH`/`SP_HOSTNAME` is wrong. | Confirm the folder name (case/spacing) and site path. |
-| ECC fetch returns 502 mentioning `openpyxl` | Package not installed. | `pip install openpyxl`. |
+| ECC fetch returns 502 mentioning `openpyxl` | Package not installed (venv created before `openpyxl` was added to `requirements.txt`). | `pip install -r requirements.txt`. |
 | Fetch "succeeds" but a card shows **0 source files, 0 rows** | No filenames matched the prefix/extension rules (`S_MARC#FreeText…csv`, `MARC_DAP….xlsx/.xls`; matching is **case-sensitive on the prefix**). | Compare the real filenames with the prefixes in `merge_service.py`. **Warning:** this also *overwrites the previous good combined file with an empty one* (known issue #4). |
 | Preview returns **404** "hasn't been created yet" | No fetch has been run for that family/source. | Run the fetch. |
 | Preview returns **500** `No columns to parse from file` | The combined CSV is empty (an earlier fetch matched no files). | Fix the SharePoint filenames and re-fetch. |

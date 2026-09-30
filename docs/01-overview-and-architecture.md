@@ -1,5 +1,7 @@
 # 01 — Overview and Architecture
 
+> **Historical (pre-agentic).** This page describes the codebase at commit `731e6cd`. The fetch/merge services, the JSON mapping and several routes described here have been replaced - see [09 — Agentic architecture](09-agentic-architecture.md) for the current structure.
+
 > Part of the [documentation set](README.md). Written against commit `731e6cd`
 > ("Changes to sharepoint with validation portion").
 
@@ -49,7 +51,7 @@ The code comments describe the intended pipeline as
 | HTTP client | requests | 2.32.3 | |
 | Config | python-dotenv | 1.0.1 | |
 | Uploads | python-multipart | 0.0.9 | needed by FastAPI for `UploadFile` |
-| **Excel engine** | **openpyxl** | **not pinned — see [known issue #1](08-known-issues.md#1-openpyxl-is-missing-from-requirementstxt)** | used implicitly by pandas |
+| Excel engine | openpyxl | 3.1.5 | used by pandas for `.xlsx` read/write (added to requirements after `731e6cd` — see [known issue #1](08-known-issues.md#1-openpyxl-was-missing-from-requirementstxt-fixed)) |
 | UI framework | React | ^18.3.1 | `frontend/package.json` |
 | Routing | react-router-dom | ^6.26.2 | |
 | Build tool | Vite (+ `@vitejs/plugin-react`) | ^5.4.8 / ^4.3.1 | |
