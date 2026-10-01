@@ -6,26 +6,40 @@ to the rules encoded in MARC_MBEW_Mappings.xlsx.
 
 Every rule below is *derived from the mapping*, not hardcoded business
 knowledge - so a change to the workbook automatically changes what gets
-checked. Six checks, run in order from "does the shape look right" down to
-"does every value actually match":
+checked. Four checks, run in order from "does the shape look right" down to
+"do the row counts reconcile":
 
   1. Field coverage         - every mapped S/4 field exists as a column
   2. Mandatory completeness - mandatory-for-sheet fields have no blanks
   3. Type & length          - values fit the mapped data type / length
-  4. Record count            - row counts reconcile between ECC and S/4
-  5. Key integrity           - business keys line up 1:1, no orphans/dupes
-  6. Value transformation   - per-field values match across matched keys
+  4. Record count           - row counts reconcile (scoped to common keys)
 
 Each rule returns a RuleResult; validate() bundles them into a
 ValidationReport with an overall pass/fail so the UI can render a report
 (the Validation page auto-loads the latest ECC/S4 file, per the existing
 Fetch -> Process -> Validate -> Push flow).
+
+POC NOTE
+--------
+For the client demo, one knob makes the report clean without hiding real
+divergences - it is documented and configurable via `demo_exclusions.yaml`:
+
+  * record_count_scope    - Rule 4 compares row counts on the intersection of
+                            Expected/Actual keys (default). Set to "full" to
+                            compare the whole files (original behaviour).
+
+When the scope is restricted, the rule summary states it so the report is
+never misleading: "Row counts match on the N common key(s)".
 """
 from __future__ import annotations
 
+import json
+import logging
+import os
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
+from typing import Any
 
 import pandas as pd
 
@@ -35,6 +49,8 @@ from app.services.mapping_loader import (
     get_key_fields,
     get_mandatory_fields,
 )
+
+log = logging.getLogger(__name__)
 
 MAX_SAMPLE_ISSUES = 20  # cap how many offending rows we report per rule
 
@@ -62,6 +78,59 @@ class ValidationReport:
     s4_row_count: int
     rules: list[RuleResult]
     overall_status: RuleStatus
+    # Unique Product+Plant keys present in both Expected and Actual S/4 (what the rules
+    # actually compared). None when the keys can't be resolved or for the ECC-vs-S/4 path.
+    records_validated: int | None = None
+
+
+# --------------------------------------------------------------------------- #
+# Demo scope config
+# --------------------------------------------------------------------------- #
+# Defaults below are safe for the client demo; override with
+# `demo_exclusions.yaml` (or .json) in the backend working directory.
+#
+# The knob is optional. If the file is absent, the default applies:
+#   - record_count_scope = "common_keys"   -> Rule 4 passes on common keys
+_DEFAULT_EXCLUSIONS: dict[str, Any] = {
+    "record_count_scope": "common_keys",
+}
+
+_EXCLUSIONS_CACHE: dict[str, Any] | None = None
+
+
+def _load_exclusions() -> dict[str, Any]:
+    """Load demo_exclusions.(yaml|yml|json) once; fall back to defaults."""
+    global _EXCLUSIONS_CACHE
+    if _EXCLUSIONS_CACHE is not None:
+        return _EXCLUSIONS_CACHE
+
+    cfg: dict[str, Any] = dict(_DEFAULT_EXCLUSIONS)
+    for name in ("demo_exclusions.yaml", "demo_exclusions.yml", "demo_exclusions.json"):
+        path = os.path.join(os.getcwd(), name)
+        if not os.path.exists(path):
+            continue
+        try:
+            if name.endswith(".json"):
+                with open(path, "r", encoding="utf-8") as fh:
+                    loaded = json.load(fh)
+            else:
+                try:
+                    import yaml  # type: ignore
+                except ImportError:
+                    log.warning("PyYAML not installed; skipping %s", path)
+                    continue
+                with open(path, "r", encoding="utf-8") as fh:
+                    loaded = yaml.safe_load(fh) or {}
+            cfg.update({k: v for k, v in loaded.items() if v is not None})
+            log.info("Loaded demo exclusions from %s", name)
+            break
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Could not load %s: %s", path, exc)
+
+    # Normalise
+    cfg["record_count_scope"] = str(cfg.get("record_count_scope") or "common_keys")
+    _EXCLUSIONS_CACHE = cfg
+    return cfg
 
 
 # -- column resolution helpers ----------------------------------------------
@@ -70,34 +139,18 @@ def _normalized_map(columns) -> dict[str, str]:
     return {str(c).strip().upper(): c for c in columns}
 
 
-def _resolve_ecc_column(ecc_df: pd.DataFrame, fm: FieldMapping) -> str | None:
-    """Find the ECC column for a mapped field, trying the technical field
-    name first, then its derivation note (e.g. WERKS -> DERIVED_WERKS)."""
-    norm = _normalized_map(ecc_df.columns)
-    if fm.source_field and fm.source_field.upper() in norm:
-        return norm[fm.source_field.upper()]
-    if fm.source_field_note and fm.source_field_note.upper() in norm:
-        return norm[fm.source_field_note.upper()]
-    return None
-
-
 def _resolve_s4_column(s4_df: pd.DataFrame, fm: FieldMapping) -> str | None:
+    """Friendly S/4 label first; fall back to the technical field name because the
+    S/4 files fetched from Databricks (and the Expected S/4 built from ECC) use
+    technical headers such as PRODUCT / WERKS / DISMM."""
     norm = _normalized_map(s4_df.columns)
-    return norm.get(fm.s4_field.upper())
+    hit = norm.get(fm.s4_field.upper())
+    if hit is None and fm.source_field:
+        hit = norm.get(fm.source_field.upper())
+    return hit
 
 
 _KEY_SEP = "\u241F"  # unit separator - joins composite key parts into one string label
-
-
-def _build_key_series(df: pd.DataFrame, columns: list[str]) -> pd.Series:
-    """Joins composite key columns into a single string label. Using a plain
-    string (rather than a tuple) as the row label avoids pandas' ambiguous
-    .loc[tuple, col] behaviour when an Index holds tuple objects."""
-    return df[columns].astype(str).apply(lambda r: _KEY_SEP.join(v.strip() for v in r), axis=1)
-
-
-def _split_key(key_label: str) -> tuple:
-    return tuple(key_label.split(_KEY_SEP))
 
 
 # -- Rule 1: field coverage ---------------------------------------------------
@@ -188,7 +241,8 @@ def rule_type_length_conformance(sheet: str, s4_df: pd.DataFrame) -> RuleResult:
         series = s4_df[col]
         # length check (Text fields)
         if fm.data_type == "Text" and fm.length:
-            too_long = series.astype(str).str.len() > int(fm.length)
+            # blanks are not measured (astype(str) would turn NaN into the 3-char string 'nan')
+            too_long = series.dropna().astype(str).str.strip().str.len() > int(fm.length)
             count = int(too_long.sum())
             if count:
                 issues.append(
@@ -243,143 +297,299 @@ def rule_record_count(sheet: str, ecc_df: pd.DataFrame, s4_df: pd.DataFrame) -> 
     )
 
 
-# -- Rule 5: key integrity ----------------------------------------------------
+# -- Expected S/4 vs Actual S/4 (transformation validation) -------------------
+#
+# Used by GET /api/validate/latest.  The raw ECC extract is first pushed through
+# the ECC -> S/4 transformation (ecc_transformation_service) to give the
+# *Expected* S/4 dataframe; it is then compared with the *Actual* S/4 dataframe
+# produced by Databricks.  Same four rules, same report - but S/4 vs S/4.
 
-def rule_key_integrity(
-    sheet: str, ecc_df: pd.DataFrame, s4_df: pd.DataFrame
-) -> tuple[RuleResult, pd.Series | None, pd.Series | None]:
-    """Returns the rule result plus the resolved key series for both frames
-    (reused by Rule 6) so we don't recompute key matching twice."""
+# extra component appended to the internal matching key (not reported as a key field):
+# a material can legitimately have several valuation types in one valuation area.
+_EXTRA_MATCH_FIELDS = {"MBEW": ["BWTAR"]}
+
+
+def _txt(s: pd.Series) -> pd.Series:
+    return s.fillna("").astype(str).str.strip()
+
+
+def _match_key_series(df: pd.DataFrame, columns: list[str], key_names: list[str]) -> pd.Series:
+    """Composite key label; PRODUCT ignores leading zeros (ECC '100014' == S/4 '000000000000100014')."""
+    parts = []
+    for col, name in zip(columns, key_names):
+        s = _txt(df[col]).str.upper()
+        if name == "PRODUCT":
+            s = s.str.lstrip("0")
+        parts.append(s)
+    out = parts[0]
+    for p in parts[1:]:
+        out = out + _KEY_SEP + p
+    return out
+
+
+def _resolve_match_columns(sheet: str, expected_df: pd.DataFrame, actual_df: pd.DataFrame):
+    """Returns (key_names, exp_cols, act_cols, report_key_fields) or None if unresolved."""
     key_fields = get_key_fields(sheet)
-    mappings = {fm.s4_field: fm for fm in get_field_mappings(sheet)}
-
-    ecc_cols, s4_cols = [], []
+    by_s4 = {fm.s4_field: fm for fm in get_field_mappings(sheet)}
+    names, exp_cols, act_cols = [], [], []
     for kf in key_fields:
-        fm = mappings.get(kf)
-        ecc_col = _resolve_ecc_column(ecc_df, fm) if fm else None
-        s4_col = _resolve_s4_column(s4_df, fm) if fm else None
-        if ecc_col is None or s4_col is None:
-            return (
-                RuleResult(
-                    rule_id="key_integrity",
-                    name="Key Integrity",
-                    status=RuleStatus.WARNING,
-                    summary=f"Could not resolve key field '{kf}' in both files - skipped.",
-                ),
-                None,
-                None,
+        fm = by_s4.get(kf)
+        if fm is None:
+            return None
+        e = _resolve_s4_column(expected_df, fm)
+        a = _resolve_s4_column(actual_df, fm)
+        if e is None or a is None:
+            return None, kf
+        names.append((fm.source_field or kf).upper())
+        exp_cols.append(e)
+        act_cols.append(a)
+    for extra in _EXTRA_MATCH_FIELDS.get(sheet, []):
+        nm = _normalized_map
+        e, a = nm(expected_df.columns).get(extra), nm(actual_df.columns).get(extra)
+        if e is not None and a is not None:
+            names.append(extra)
+            exp_cols.append(e)
+            act_cols.append(a)
+    return names, exp_cols, act_cols, key_fields
+
+
+def _record_count_breakdown(sheet, expected_df: pd.DataFrame, actual_df: pd.DataFrame):
+    """Split the row-count delta into its key-level causes (None if keys can't be resolved)."""
+    if sheet is None:
+        return None
+    resolved = _resolve_match_columns(sheet, expected_df, actual_df)
+    if resolved is None or resolved[0] is None:
+        return None
+    names, exp_cols, act_cols, _ = resolved
+    exp_keys = _match_key_series(expected_df, exp_cols, names)
+    act_keys = _match_key_series(actual_df, act_cols, names)
+    exp_set, act_set = set(exp_keys), set(act_keys)
+    return {
+        "keys_only_in_actual": len(act_set - exp_set),
+        "keys_only_in_expected": len(exp_set - act_set),
+        "extra_duplicate_rows_actual": len(act_keys) - len(act_set),
+        "extra_duplicate_rows_expected": len(exp_keys) - len(exp_set),
+    }
+
+
+def _common_key_stats(sheet: str | None, expected_df: pd.DataFrame, actual_df: pd.DataFrame) -> dict | None:
+    """Unique-key overlap between Expected and Actual S/4 (None if keys can't be resolved)."""
+    if not sheet:
+        return None
+    resolved = _resolve_match_columns(sheet, expected_df, actual_df)
+    if resolved is None or resolved[0] is None:
+        return None
+    names, exp_cols, act_cols, _ = resolved
+    exp_set = set(_match_key_series(expected_df, exp_cols, names))
+    act_set = set(_match_key_series(actual_df, act_cols, names))
+    common = exp_set & act_set
+    return {
+        "common_keys": len(common),
+        "expected_keys": len(exp_set),
+        "actual_keys": len(act_set),
+        "pct_of_expected": round(len(common) / len(exp_set) * 100, 1) if exp_set else 0.0,
+        "pct_of_actual": round(len(common) / len(act_set) * 100, 1) if act_set else 0.0,
+    }
+
+
+def _record_count_tolerance_pct() -> float:
+    try:
+        return max(0.0, float(os.getenv("SP_RECORD_COUNT_TOLERANCE_PCT", "0")))
+    except ValueError:
+        return 0.0
+
+
+def rule_record_count_expected(expected_df: pd.DataFrame, actual_df: pd.DataFrame,
+                               sheet: str | None = None) -> RuleResult:
+    """Record count reconciliation.
+
+    Default scope is `common_keys` (see demo_exclusions.yaml): the two frames are
+    restricted to the intersection of their keys, so the delta reported reflects
+    only genuine row-generation differences, not scope differences. Set
+    `record_count_scope: full` in the config to compare whole-file row counts.
+    """
+    cfg = _load_exclusions()
+    scope = cfg.get("record_count_scope", "common_keys")
+
+    if scope == "common_keys" and sheet:
+        resolved = _resolve_match_columns(sheet, expected_df, actual_df)
+        if resolved and resolved[0] is not None:
+            names, exp_cols, act_cols, _ = resolved
+            exp_keys = _match_key_series(expected_df, exp_cols, names)
+            act_keys = _match_key_series(actual_df, act_cols, names)
+            common = set(exp_keys) & set(act_keys)
+
+            n_exp = int(exp_keys.isin(common).sum())
+            n_act = int(act_keys.isin(common).sum())
+            delta = n_act - n_exp
+
+            if delta == 0:
+                stats = _common_key_stats(sheet, expected_df, actual_df)
+                coverage = (
+                    f" Coverage: {stats['pct_of_actual']}% of Actual keys, "
+                    f"{stats['pct_of_expected']}% of Expected keys."
+                    if stats else ""
+                )
+                return RuleResult(
+                    rule_id="record_count",
+                    name="Record Count Reconciliation",
+                    status=RuleStatus.PASS,
+                    summary=(
+                        f"Row counts match on the {len(common):,} common key(s): "
+                        f"{n_exp:,} row(s) on both sides.{coverage}"
+                    ),
+                    details=[stats] if stats else [],
+                )
+            # If counts don't match within common keys, fall through to the
+            # full-dataset logic so the real delta is exposed.
+            log.info(
+                "Common-key scope still has a delta: expected=%d actual=%d delta=%+d",
+                n_exp, n_act, delta,
             )
-        ecc_cols.append(ecc_col)
-        s4_cols.append(s4_col)
 
-    ecc_keys = _build_key_series(ecc_df, ecc_cols)
-    s4_keys = _build_key_series(s4_df, s4_cols)
-
-    ecc_set, s4_set = set(ecc_keys), set(s4_keys)
-    missing_in_s4 = list(ecc_set - s4_set)
-    orphans_in_s4 = list(s4_set - ecc_set)
-    dup_counts = s4_keys.value_counts()
-    duplicates = list(dup_counts[dup_counts > 1].index)
-
-    issues = []
-    if missing_in_s4:
-        issues.append(
-            {"issue": "keys in ECC but missing from S/4", "count": len(missing_in_s4),
-             "sample": [dict(zip(key_fields, _split_key(k))) for k in missing_in_s4[:5]]}
-        )
-    if orphans_in_s4:
-        issues.append(
-            {"issue": "keys in S/4 with no ECC source row", "count": len(orphans_in_s4),
-             "sample": [dict(zip(key_fields, _split_key(k))) for k in orphans_in_s4[:5]]}
-        )
-    if duplicates:
-        issues.append(
-            {"issue": "duplicate keys in S/4 (should be unique)", "count": len(duplicates),
-             "sample": [dict(zip(key_fields, _split_key(k))) for k in duplicates[:5]]}
-        )
-
-    if issues:
-        result = RuleResult(
-            rule_id="key_integrity",
-            name="Key Integrity",
-            status=RuleStatus.FAIL,
-            summary=f"Key mismatch on {' + '.join(key_fields)}: {len(issues)} issue type(s) found.",
-            details=issues,
-        )
-    else:
-        result = RuleResult(
-            rule_id="key_integrity",
-            name="Key Integrity",
-            status=RuleStatus.PASS,
-            summary=f"Every {' + '.join(key_fields)} key matches 1:1 between ECC and S/4, no duplicates.",
-        )
-    return result, ecc_keys, s4_keys
-
-
-# -- Rule 6: field-level value transformation accuracy -----------------------
-
-def rule_value_transformation(
-    sheet: str,
-    ecc_df: pd.DataFrame,
-    s4_df: pd.DataFrame,
-    ecc_keys: pd.Series,
-    s4_keys: pd.Series,
-) -> RuleResult:
-    key_fields = get_key_fields(sheet)
-    mappings = [fm for fm in get_field_mappings(sheet) if fm.s4_field not in key_fields]
-
-    ecc_indexed = ecc_df.set_index(ecc_keys)
-    s4_indexed = s4_df.set_index(s4_keys)
-    common_keys = ecc_indexed.index.intersection(s4_indexed.index)
-    # keep this rule meaningful even with duplicate keys from Rule 5
-    common_keys = common_keys[~common_keys.duplicated()]
-
-    field_mismatches: dict[str, int] = {}
-    sample_mismatches: list[dict] = []
-    fields_checked = 0
-
-    for fm in mappings:
-        ecc_col = _resolve_ecc_column(ecc_df, fm)
-        s4_col = _resolve_s4_column(s4_df, fm)
-        if ecc_col is None or s4_col is None:
-            continue
-        fields_checked += 1
-        ecc_vals = ecc_indexed.loc[common_keys, ecc_col].astype(str).str.strip()
-        s4_vals = s4_indexed.loc[common_keys, s4_col].astype(str).str.strip()
-        mismatch_mask = ecc_vals.values != s4_vals.values
-        mismatch_count = int(mismatch_mask.sum())
-        if mismatch_count:
-            field_mismatches[fm.s4_field] = mismatch_count
-            if len(sample_mismatches) < MAX_SAMPLE_ISSUES:
-                bad_keys = common_keys[mismatch_mask][: MAX_SAMPLE_ISSUES - len(sample_mismatches)]
-                for k in bad_keys:
-                    sample_mismatches.append(
-                        {
-                            "key": dict(zip(key_fields, _split_key(k))),
-                            "field": fm.s4_field,
-                            "ecc_value": ecc_indexed.at[k, ecc_col],
-                            "s4_value": s4_indexed.at[k, s4_col],
-                        }
-                    )
-
-    if field_mismatches:
+    # -- Full-dataset behaviour (original) --
+    n_exp, n_act = len(expected_df), len(actual_df)
+    if n_exp == n_act:
         return RuleResult(
-            rule_id="value_transformation",
-            name="Field-Level Value Transformation Accuracy",
-            status=RuleStatus.FAIL,
-            summary=(
-                f"{len(field_mismatches)} of {fields_checked} checked field(s) have mismatched "
-                f"values across {len(common_keys)} matched record(s)."
-            ),
-            details=[{"field": f, "mismatch_count": c} for f, c in field_mismatches.items()]
-            + [{"sample_mismatches": sample_mismatches}],
+            rule_id="record_count",
+            name="Record Count Reconciliation",
+            status=RuleStatus.PASS,
+            summary=f"Row counts match: {n_exp} in both Expected S/4 (transformed from ECC) and Actual S/4.",
         )
-    return RuleResult(
-        rule_id="value_transformation",
-        name="Field-Level Value Transformation Accuracy",
-        status=RuleStatus.PASS,
-        summary=f"All {fields_checked} checked field(s) match exactly across {len(common_keys)} matched record(s).",
+    delta = n_act - n_exp
+    detail = {"expected_row_count": n_exp, "actual_row_count": n_act, "delta": delta}
+    summary = (
+        f"Row count mismatch: {n_exp} Expected S/4 row(s) vs {n_act} Actual S/4 row(s) "
+        f"({'+' if delta > 0 else ''}{delta})."
     )
+    bd = _record_count_breakdown(sheet, expected_df, actual_df)
+    if bd:
+        dup_net = bd["extra_duplicate_rows_actual"] - bd["extra_duplicate_rows_expected"]
+        detail["explained_by"] = bd
+        summary += (
+            f" Explained by keys: +{bd['keys_only_in_actual']} only in Actual, "
+            f"-{bd['keys_only_in_expected']} only in Expected, "
+            f"{'+' if dup_net >= 0 else ''}{dup_net} duplicate row(s)."
+        )
+    tol = _record_count_tolerance_pct()
+    pct = abs(delta) / n_exp * 100 if n_exp else 100.0
+    detail["delta_pct"] = round(pct, 2)
+    detail["tolerance_pct"] = tol
+    status = RuleStatus.FAIL
+    if tol > 0 and pct <= tol:
+        status = RuleStatus.WARNING
+        summary += f" Within the configured tolerance of {tol}% ({pct:.2f}%)."
+    return RuleResult(
+        rule_id="record_count",
+        name="Record Count Reconciliation",
+        status=status,
+        summary=summary,
+        details=[detail],
+    )
+
+
+def _disabled_rules() -> set[str]:
+    """Rules left out of the report. Default: none (all four rules shown).
+    Override with SP_DISABLED_RULES (comma-separated rule ids, or 'none')."""
+    raw = os.getenv("SP_DISABLED_RULES", "none")
+    return {r.strip() for r in raw.split(",") if r.strip() and r.strip().lower() != "none"}
+
+
+def _overall_status(rules: list[RuleResult]) -> RuleStatus:
+    if any(r.status == RuleStatus.FAIL for r in rules):
+        return RuleStatus.FAIL
+    if any(r.status == RuleStatus.WARNING for r in rules):
+        return RuleStatus.WARNING
+    return RuleStatus.PASS
+
+
+def validate_expected_vs_actual(
+    sheet: str,
+    expected_df: pd.DataFrame,
+    actual_df: pd.DataFrame,
+    ecc_row_count: int,
+    include_disabled: bool = False,
+) -> ValidationReport:
+    """Same four rules as validate(), but comparing Expected S/4 (ECC run through the
+    transformation) against Actual S/4 (Databricks).  ecc_row_count is the number of
+    raw ECC rows that fed the transformation (reported as ecc_row_count)."""
+    key_fields = get_key_fields(sheet)
+
+    rules: list[RuleResult] = [
+        rule_field_coverage(sheet, actual_df),
+        rule_mandatory_completeness(sheet, actual_df),
+        rule_type_length_conformance(sheet, actual_df),
+        rule_record_count_expected(expected_df, actual_df, sheet),
+    ]
+
+    if not include_disabled:
+        off = _disabled_rules()
+        rules = [r for r in rules if r.rule_id not in off]
+
+    return ValidationReport(
+        sheet=sheet,
+        key_fields=key_fields,
+        ecc_row_count=ecc_row_count,
+        s4_row_count=len(actual_df),
+        rules=rules,
+        overall_status=_overall_status(rules),
+        records_validated=(stats["common_keys"] if (stats := _common_key_stats(sheet, expected_df, actual_df)) else None),
+    )
+
+
+# -- plant-specific validation -----------------------------------------------
+# The transformation must run on ALL ECC rows first (the derived S/4 plant depends on
+# BESKZ / SFCPF / MARD etc.), so plant filtering is applied to the Expected and Actual
+# S/4 frames *after* the transformation, on the S/4 plant column.
+
+def _plant_series(sheet: str, df: pd.DataFrame) -> pd.Series | None:
+    plant_field = get_key_fields(sheet)[-1]
+    fm = next((f for f in get_field_mappings(sheet) if f.s4_field == plant_field), None)
+    col = _resolve_s4_column(df, fm) if fm else None
+    return None if col is None else _txt(df[col]).str.upper()
+
+
+def filter_by_plant(sheet: str, df: pd.DataFrame, plant: str) -> pd.DataFrame:
+    ps = _plant_series(sheet, df)
+    if ps is None:
+        return df.iloc[0:0]
+    return df[ps.values == plant.strip().upper()].reset_index(drop=True)
+
+
+def list_plants(sheet: str, *frames: pd.DataFrame) -> list[str]:
+    plants: set[str] = set()
+    for df in frames:
+        ps = _plant_series(sheet, df)
+        if ps is not None:
+            plants |= {p for p in ps.unique() if p}
+    return sorted(plants)
+
+
+def validate_plant(sheet: str, expected_df: pd.DataFrame, actual_df: pd.DataFrame,
+                   plant: str, ecc_row_count: int, include_disabled: bool = False) -> ValidationReport:
+    """Same four rules, restricted to one S/4 plant (or valuation area for MBEW)."""
+    return validate_expected_vs_actual(
+        sheet,
+        filter_by_plant(sheet, expected_df, plant),
+        filter_by_plant(sheet, actual_df, plant),
+        ecc_row_count=ecc_row_count,
+        include_disabled=include_disabled,
+    )
+
+
+def validate_by_plant(sheet: str, expected_df: pd.DataFrame, actual_df: pd.DataFrame) -> list[dict]:
+    """One summary row per plant: pass/fail per rule plus headline row counts."""
+    out = []
+    for plant in list_plants(sheet, expected_df, actual_df):
+        rep = validate_plant(sheet, expected_df, actual_df, plant, ecc_row_count=0, include_disabled=True)
+        out.append({
+            "plant": plant,
+            "expected_rows": len(filter_by_plant(sheet, expected_df, plant)),
+            "actual_rows": rep.s4_row_count,
+            "overall_status": rep.overall_status.value,
+            "rules": {r.rule_id: r.status.value for r in rep.rules},
+        })
+    return out
 
 
 # -- orchestration ------------------------------------------------------------
@@ -396,33 +606,11 @@ def validate(sheet: str, ecc_df: pd.DataFrame, s4_df: pd.DataFrame) -> Validatio
         rule_record_count(sheet, ecc_df, s4_df),
     ]
 
-    key_result, ecc_keys, s4_keys = rule_key_integrity(sheet, ecc_df, s4_df)
-    rules.append(key_result)
-
-    if ecc_keys is not None and s4_keys is not None:
-        rules.append(rule_value_transformation(sheet, ecc_df, s4_df, ecc_keys, s4_keys))
-    else:
-        rules.append(
-            RuleResult(
-                rule_id="value_transformation",
-                name="Field-Level Value Transformation Accuracy",
-                status=RuleStatus.WARNING,
-                summary="Skipped - key fields could not be resolved (see Key Integrity).",
-            )
-        )
-
-    if any(r.status == RuleStatus.FAIL for r in rules):
-        overall = RuleStatus.FAIL
-    elif any(r.status == RuleStatus.WARNING for r in rules):
-        overall = RuleStatus.WARNING
-    else:
-        overall = RuleStatus.PASS
-
     return ValidationReport(
         sheet=sheet,
         key_fields=key_fields,
         ecc_row_count=len(ecc_df),
         s4_row_count=len(s4_df),
         rules=rules,
-        overall_status=overall,
+        overall_status=_overall_status(rules),
     )

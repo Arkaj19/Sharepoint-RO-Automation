@@ -1,7 +1,7 @@
 """
 Pydantic response/request models shared between API and services.
 """
-from typing import List, Any, Literal
+from typing import List, Any, Literal, Optional
 from pydantic import BaseModel
 
 
@@ -49,6 +49,7 @@ class ValidationReportResponse(BaseModel):
     key_fields: List[str]
     ecc_row_count: int
     s4_row_count: int
+    records_validated: Optional[int] = None
     ecc_source: str
     s4_source: str
     overall_status: RuleStatusLiteral
