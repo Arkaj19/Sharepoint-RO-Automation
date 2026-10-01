@@ -20,13 +20,25 @@ the Databricks SQL but is not in the rule book was removed for MARC: the MATNR_n
 output column / NEW_MATNR lookup, the S_MARA material filter, the DISMM 'ND' and
 MMSTA 'ZP' rules for BESKZ = 'X', PRCTR = derived plant (now passthrough), the
 storage-location and MARD conditions in the plant derivation, and the SOBSL /
-LGPRO / LGFSB rules for plants the rule book does not cover.  MBEW is unchanged.
+LGPRO / LGFSB rules for plants the rule book does not cover.
+
+RULE-BOOK ALIGNMENT (MBEW)
+--------------------------
+The MBEW output follows MBEW_Mappings.xlsx only.  Compared with the Databricks
+view, the following were removed / changed for MBEW:
+
+* filters: MARA.LVORM IS NULL, MARA.MTART <> 'NVAL' (all plant groups),
+  MARC.LVORM IS NULL (split plants), MBEW.LVORM IS NULL and
+  MBEW.MATNR in MARA (LVORM IS NULL, MTART <> 'UNBW').  The S_MARA material
+  filter and the MATNR_new output column / NEW_MATNR lookup are gone.
+* plants: 1025 -> US29, 1029 -> CA02, 1000 -> US26 as a plain mapping (no MARD /
+  storage-location condition, so no MATNR-only fan-out for 1000/1029).
+* KOSGR: DERIVED_WERKS in (CA02, US30, US31, US33) -> '' else KOSGR (the 1021
+  BAKI/DAKI/PAKI override via MARC.SFCPF is gone).
+* STPRS (FERT + MEINS = 'CS'): STPRS / MARM_EA.UMREN rounded to 2 decimals.
 
 QUIRKS replicated from the SQL
 ------------------------------
-* 1000/1029: base CTE joins MARC/MBEW on MATNR only (not plant), so a material
-  that exists in both plants fans out.  ``strict_join=True`` joins on plant too.
-* 1021 MBEW: KOSGR looks at MARC.SFCPF of *any* plant of the material.
 * ZPLD1 (a date field) is filled with cast(STPRS as string), same as ZPLP1.
 * LGFSB's ELSE branch in 1021/1028/1030 returns MARC.LGPRO, not MARC.LGFSB.
 * AWSLS tests LOSGR = '0.000' (not AWSLS).
@@ -67,11 +79,10 @@ class Profile:
     plant_y: str = ""          # split: target for in-house
     target: str = ""           # single: target plant
     mmsta_x_zp: bool = False   # 1021 only: BESKZ = 'X' -> MMSTA 'ZP'
-    kosgr_dap3: bool = False   # 1021 MBEW only: BAKI/DAKI/PAKI override
 
 
 PROFILES = [
-    Profile("1021", ("1021",), "split", "US30", "US27", mmsta_x_zp=True, kosgr_dap3=True),
+    Profile("1021", ("1021",), "split", "US30", "US27", mmsta_x_zp=True),
     Profile("1028", ("1028",), "split", "US31", "US28"),
     Profile("1030", ("1030",), "split", "US33", "US32"),
     Profile("1025", ("1025",), "single", target="US29"),
@@ -111,7 +122,7 @@ MARC_DERIVED = {
 MARC_PASS = [c for c in MARC_COLUMNS if c not in MARC_DERIVED and c not in MARC_BLANK]
 
 MBEW_COLUMNS = [
-    "PRODUCT", "MATNR_new", "BWKEY", "BWTAR", "BWTTY", "MLAST", "BKLAS", "EKLAS", "QKLAS", "VPRSV",
+    "PRODUCT", "BWKEY", "BWTAR", "BWTTY", "MLAST", "BKLAS", "EKLAS", "QKLAS", "VPRSV",
     "WAERS", "VERPR", "STPRS", "PEINH", "ZKPRS", "ZKDAT", "ZPLP1", "ZPLD1", "ZPLP2", "ZPLD2", "ZPLP3",
     "ZPLD3", "BWPRS", "BWPS1", "VJBWS", "BWPEI", "BWPRH", "BWPH1", "VJBWH", "XLIFO", "MYPOL", "ABWKZ",
     "MTUSE", "MTORG", "OWPNR", "HKMAT", "EKALR", "HRKFT", "KOSGR", "BWSPA", "PSTATB", "PSTATG",
@@ -128,10 +139,7 @@ REQUIRED_COLS = {
     "MARA": ["MATNR", "LVORM", "MTART", "MEINS", "PRDHA"],
     "MARM": ["MATNR", "MEINH", "UMREN"],
     "MBEW": ["MATNR", "BWKEY", "LVORM", "BWTAR", "STPRS", "PEINH", "KOSGR", "ZPLD2", "ZPLD3"] + MBEW_PASS,
-    "MARD": ["MATNR", "WERKS", "LGORT", "LVORM"],
     "EKGRP": ["MATNR", "WERKS", "EKGRP"],
-    "NEW_MATNR": ["MATNR", "MATNR_NEW"],
-    "S_MARA": ["PRODUCT"],
 }
 
 
@@ -221,21 +229,10 @@ def to_date_series(s: pd.Series, mdy: bool = False, strict: bool = False) -> pd.
 # 3. Transformation
 # --------------------------------------------------------------------------- #
 def derive_base(T, prof: Profile):
-    """The `base` CTE: (MATNR, _DW [, _BWERKS]) rows with the derived plant."""
-    if prof.mode == "single":
+    """The `base` CTE (split plants only): (MATNR, _DW) rows with the derived plant.
+    'single' (1025) and 'other' (1000/1029) are plain plant mappings and need no base."""
+    if prof.mode != "split":
         return None
-    if prof.mode == "other":
-        marc, mard, mara = T["MARC"], T["MARD"], T["MARA"]
-        b = marc[["MATNR", "WERKS"]].drop_duplicates().merge(
-            mard[["MATNR", "WERKS", "LGORT", "LVORM"]], on=["MATNR", "WERKS"], how="left")
-        b = b[b.LVORM.isna() & b.LGORT.notna() & b.WERKS.isin(prof.src)]
-        ml = mara[["MATNR", "LVORM"]].rename(columns={"LVORM": "_ML"})
-        b = b.merge(ml, on="MATNR", how="left")
-        b = b[b._ML.isna()].reset_index(drop=True)
-        b["_DW"] = case(b.index, [(b.WERKS == "1029", "CA02"),
-                                  ((b.WERKS == "1000") & ne(b.LGORT, "DWHS"), "US26")], default=b.WERKS)
-        return b[["MATNR", "WERKS", "_DW"]].rename(columns={"WERKS": "_BWERKS"}).drop_duplicates()
-
     # split: UNION ALL of the "X" and "Y" selections, both from MARC join MARA
     X, Y = prof.plant_x, prof.plant_y
     marc, mara = T["MARC"], T["MARA"]
@@ -254,27 +251,18 @@ def derive_base(T, prof: Profile):
     return out.drop_duplicates()
 
 
-def attach_context(d: pd.DataFrame, T, nval_filter: bool, with_ekgrp: bool,
-                   use_s_mara: bool = True) -> pd.DataFrame:
-    """MARA / MARM_EA / EKGRP / MATNR_new joins + the mm_S_MARA inner join."""
+def attach_context(d: pd.DataFrame, T, with_ekgrp: bool) -> pd.DataFrame:
+    """MARA / MARM_EA / EKGRP joins; MARA.MTART <> 'NVAL' and MARA.LVORM IS NULL filters."""
     d = d.copy()
     d["_K"] = strip_zeros(d.MATNR)
     mara = T["MARA"]
     ma = mara[["MATNR", "LVORM", "MTART", "MEINS", "PRDHA"]].rename(
         columns={"LVORM": "_MARA_LVORM", "MTART": "_MTART", "MEINS": "_MEINS", "PRDHA": "_PRDHA"})
     d = d.merge(ma, on="MATNR", how="left")
-    if nval_filter:                                            # MARA.MTART <> 'NVAL'
-        d = d[~(d._MTART == "NVAL")]
+    d = d[~(d._MTART == "NVAL")]                               # MARA.MTART <> 'NVAL'
     ea = T["MARM"]
     ea = ea[ea.MEINH == "EA"][["MATNR", "UMREN"]].drop_duplicates("MATNR").rename(columns={"UMREN": "_UMREN"})
     d = d.merge(ea, on="MATNR", how="left")
-    if T["NEW_MATNR"] is not None:
-        nm = T["NEW_MATNR"][["MATNR", "MATNR_NEW"]].copy()
-        nm["_K"] = strip_zeros(nm.MATNR)
-        nm = nm[["_K", "MATNR_NEW"]].drop_duplicates().rename(columns={"MATNR_NEW": "_NEWMATNR"})
-        d = d.merge(nm, on="_K", how="left")
-    else:
-        d["_NEWMATNR"] = np.nan
     if with_ekgrp:
         if T["EKGRP"] is not None:
             e = T["EKGRP"][["MATNR", "WERKS", "EKGRP"]].copy()
@@ -284,9 +272,6 @@ def attach_context(d: pd.DataFrame, T, nval_filter: bool, with_ekgrp: bool,
             d = d.merge(e, left_on=["_K", "WERKS"], right_on=["_K", "_EW"], how="left")
         else:
             d["_EKGRP"] = np.nan
-    if use_s_mara and T["S_MARA"] is not None:
-        keep = set(strip_zeros(T["S_MARA"].PRODUCT).dropna())
-        d = d[d._K.isin(keep)]
     return d[d._MARA_LVORM.isna()].reset_index(drop=True)
 
 
@@ -357,15 +342,15 @@ def transform_marc(d: pd.DataFrame, prof: Profile) -> pd.DataFrame:
     return out[MARC_COLUMNS].drop_duplicates()
 
 
-def cs_price(stprs, peinh, umren):
-    """round((STPRS*PEINH)/(UMREN*PEINH), 2) with Spark's HALF_UP rounding."""
-    if pd.isna(stprs) or pd.isna(peinh) or pd.isna(umren):
+def cs_price(stprs, umren):
+    """round(MBEW.STPRS / MARM_EA.UMREN, 2) with HALF_UP rounding (MBEW_Mappings.xlsx)."""
+    if pd.isna(stprs) or pd.isna(umren):
         return np.nan
     try:
-        s, p, u = Decimal(str(stprs)), Decimal(str(peinh)), Decimal(str(umren))
-        if u * p == 0:
+        s, u = Decimal(str(stprs)), Decimal(str(umren))
+        if u == 0:
             return np.nan
-        return str(((s * p) / (u * p)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+        return str((s / u).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
     except (InvalidOperation, ValueError):
         return np.nan
 
@@ -374,7 +359,6 @@ def transform_mbew(d: pd.DataFrame, prof: Profile) -> pd.DataFrame:
     dw, mt, ix = d["_DW"], d._MTART, d.index
     out = pd.DataFrame(index=ix)
     out["PRODUCT"] = d.MATNR
-    out["MATNR_new"] = strip_zeros(d._NEWMATNR)
     out["BWKEY"] = dw
     out["BWTAR"] = case(ix, [(d.BWTAR == "~", "")], d.BWTAR)
     out["BKLAS"] = case(ix, [(d._PRDHA.isin(["009990099900000999", "00999"]), "RACK")], mt)
@@ -382,7 +366,7 @@ def transform_mbew(d: pd.DataFrame, prof: Profile) -> pd.DataFrame:
     out["WAERS"] = "USD"
     out["VERPR"] = ""
     cs = (mt == "FERT") & (d._MEINS == "CS")
-    calc = pd.Series([cs_price(a, b, c) for a, b, c in zip(d.STPRS[cs], d.PEINH[cs], d._UMREN[cs])],
+    calc = pd.Series([cs_price(a, c) for a, c in zip(d.STPRS[cs], d._UMREN[cs])],
                      index=d.index[cs], dtype=object)
     out["STPRS"] = case(ix, [(cs, calc.reindex(ix))], d.STPRS)
     planned = case(ix, [(notin(mt, ["FERT", "HALB"]), d.STPRS)], "")   # ZPLD1 = price: as in the SQL
@@ -393,52 +377,44 @@ def transform_mbew(d: pd.DataFrame, prof: Profile) -> pd.DataFrame:
     out["OWPNR"] = ""
     out["HKMAT"] = "X"
     out["EKALR"] = "X"
-    if prof.kosgr_dap3:
-        sf, ks = d["_MARC_SFCPF"], d.KOSGR
-        out["KOSGR"] = case(ix, [((sf == "DAP3") & (dw == "US30") & ks.notna(), "BAKI"),
-                                 ((sf == "DAP3") & (dw == "US31") & ks.notna(), "DAKI"),
-                                 ((sf == "DAP3") & (dw == "US33") & ks.notna(), "PAKI")], ks)
-    else:
-        out["KOSGR"] = case(ix, [(dw.isin(["CA02", "US30", "US31", "US33"]), "")], d.KOSGR)
+    # KOSGR: DERIVED_WERKS in (CA02, US30, US31, US33) -> '' else KOSGR
+    out["KOSGR"] = case(ix, [(dw.isin(["CA02", "US30", "US31", "US33"]), "")], d.KOSGR)
     out["PSTATB"] = ""
     out["PSTATG"] = ""
     out = pd.concat([out, d[MBEW_PASS]], axis=1)
     return out[MBEW_COLUMNS].drop_duplicates()
 
 
-def build_view(T, prof: Profile, table: str, strict_join: bool) -> pd.DataFrame:
-    """Reproduce one mm_S_MARC / mm_S_MBEW view for one plant profile."""
+def build_view(T, prof: Profile, table: str, strict_join: bool = False) -> pd.DataFrame:
+    """Reproduce one mm_S_MARC / mm_S_MBEW view for one plant profile.
+
+    ``strict_join`` is kept for API compatibility only: 1000/1029 are now a plain plant
+    mapping (no MATNR-only join), so there is no fan-out left to make strict.
+    """
     is_marc = table == "MARC"
     src_tbl = T["MARC"] if is_marc else T["MBEW"]
     plant_col = "WERKS" if is_marc else "BWKEY"
     rows = src_tbl[src_tbl[plant_col].isin(prof.src) & src_tbl.LVORM.isna()]
-    if prof.mode == "single":
+    if prof.mode == "single":                                   # 1025 -> US29
         d = rows.copy()
         d["_DW"] = prof.target
-    elif prof.mode == "other" and is_marc:                      # rule book: plain 1000/1029 plant mapping
+    elif prof.mode == "other":                                  # 1000 -> US26, 1029 -> CA02
         d = rows.copy()
-        d["_BWERKS"] = d[plant_col]
         d["_DW"] = d[plant_col].map(OTHER_PLANT_MAP)
-    else:
+    else:                                                       # 1021 / 1028 / 1030 (BASE CTE)
         base = derive_base(T, prof)
         d = base.merge(rows, on="MATNR", how="inner")          # SQL joins on MATNR only
-        if prof.mode == "other" and strict_join:
-            d = d[d._BWERKS == d[plant_col]]
     if prof.mode != "single":
         d = d[notin(d._DW, list(prof.src))]                    # DERIVED_WERKS not in source plant(s)
     if d.empty:
         return pd.DataFrame(columns=MARC_COLUMNS if is_marc else MBEW_COLUMNS)
-    d = attach_context(d, T, nval_filter=(prof.mode == "split") or is_marc, with_ekgrp=is_marc,
-                       use_s_mara=not is_marc)
+    d = attach_context(d, T, with_ekgrp=is_marc)
     if is_marc:
         d["_EKGRP"] = d["_EKGRP"] if "_EKGRP" in d else np.nan
         return transform_marc(d, prof)
     ok = T["MARA"]
     ok = set(ok[ne(ok.MTART, "UNBW") & ok.LVORM.isna()].MATNR)
     d = d[d.MATNR.isin(ok)]
-    if prof.kosgr_dap3:                                        # join to MARC of ANY plant (SQL quirk)
-        mc = T["MARC"][["MATNR", "SFCPF"]].rename(columns={"SFCPF": "_MARC_SFCPF"})
-        d = d.merge(mc, on="MATNR", how="left")
     return transform_mbew(d.reset_index(drop=True), prof)
 
 
@@ -449,9 +425,6 @@ def transform_table(T, table: str, strict_join: bool = False, only=None) -> pd.D
     parts = []
     for prof in PROFILES:
         if only and prof.label not in only:
-            continue
-        if prof.mode == "other" and table == "MBEW" and T.get("MARD") is None:
-            log.warning("Skipping plants 1000/1029: MARD table not supplied")
             continue
         v = build_view(T, prof, table, strict_join)
         log.info("Expected S4 %s  plant group %-9s -> %8d rows", table, prof.label, len(v))

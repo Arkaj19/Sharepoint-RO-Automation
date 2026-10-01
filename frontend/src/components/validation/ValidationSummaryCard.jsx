@@ -26,26 +26,14 @@ function ValidationSummaryCard({ report }) {
         </span>
       </div>
 
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mt-5">
+      <dl className="grid grid-cols-1 gap-4 text-sm mt-5">
         <div>
-          <dt className="text-gray-500 text-xs">ECC rows</dt>
-          <dd className="text-gray-900 font-medium text-lg">
-            {report.ecc_row_count.toLocaleString()}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-gray-500 text-xs">S/4 rows</dt>
-          <dd className="text-gray-900 font-medium text-lg">
-            {report.s4_row_count.toLocaleString()}
-          </dd>
-        </div>
-        <div className="col-span-2 sm:col-span-2">
           <dt className="text-gray-500 text-xs">Sources</dt>
           <dd className="text-gray-700 text-xs mt-1 truncate" title={report.ecc_source}>
-            ECC: {report.ecc_source}
+            ECC source file: {report.ecc_source}
           </dd>
           <dd className="text-gray-700 text-xs truncate" title={report.s4_source}>
-            S/4: {report.s4_source}
+            Actual S/4 file: {report.s4_source}
           </dd>
         </div>
       </dl>

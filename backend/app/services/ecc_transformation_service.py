@@ -12,14 +12,14 @@ Why a separate layer around ``ecc_to_s4``:
   through untouched.
 * The transformation (like the Databricks views it replicates) also needs
   reference tables that are not part of the MARC/MBEW extract itself:
-  MARA, MARM (required), MARD (plants 1000/1029) and the optional lookups
-  EKGRP_UPDATED, NEW_MATNR, S_MARA.  They are picked up from the same folder
+  MARA, MARM (required) and the optional lookup EKGRP_UPDATED (MARC only).
+  They are picked up from the same folder
   convention the fetch step already uses:
 
       {OUTPUT_DIR}/{TABLE}/ECC/{TABLE}_ECC_combined.(csv|xlsx)
 
   For the MBEW sheet the latest MARC ECC file is also loaded, because the
-  MBEW views derive their plant and KOSGR from MARC.
+  MBEW views derive the plant of the split plants (1021/1028/1030) from MARC.
 """
 from __future__ import annotations
 
@@ -120,13 +120,7 @@ MARM_ALIASES = {
     "MATNR": ["Material"], "MEINH": ["Alt. Unit of Measure", "Alternative Unit of Measure", "AUn"],
     "UMREN": ["Denominator"],
 }
-MARD_ALIASES = {
-    "MATNR": ["Material"], "WERKS": ["Plant"], "LGORT": ["Storage Location", "SLoc"],
-    "LVORM": ["DF stor. loc.", "Deletion flag", "Flag for Deletion", "DF at storage loc. level"],
-}
 EKGRP_ALIASES = {"MATNR": ["Material", "PRODUCT"], "WERKS": ["Plant"], "EKGRP": ["Purchasing Group"]}
-NEWMATNR_ALIASES = {"MATNR": ["Material"], "MATNR_NEW": ["MATNR_new", "New Material"]}
-SMARA_ALIASES = {"PRODUCT": ["Product", "Material", "MATNR"]}
 
 _FLOAT_INT = re.compile(r"^(-?\d+)\.0+$")
 
@@ -220,10 +214,7 @@ def load_reference_tables() -> dict:
     return {
         "MARA": _load_ref("MARA", "MARA", "MARA", MARA_ALIASES, True),
         "MARM": _load_ref("MARM", "MARM", "MARM", MARM_ALIASES, True),
-        "MARD": _load_ref("MARD", "MARD", "MARD", MARD_ALIASES, False),
         "EKGRP": _load_ref("EKGRP_UPDATED", "EKGRP_UPDATED", "EKGRP", EKGRP_ALIASES, False),
-        "NEW_MATNR": _load_ref("NEW_MATNR", "NEW_MATNR", "NEW_MATNR", NEWMATNR_ALIASES, False),
-        "S_MARA": _load_ref("S_MARA", "S_MARA", "S_MARA", SMARA_ALIASES, False),
     }
 
 

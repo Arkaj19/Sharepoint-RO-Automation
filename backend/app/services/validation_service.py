@@ -231,14 +231,24 @@ def _violates_type(value, data_type: str | None) -> str | None:
     return None
 
 
+# Known exceptions to the *type* check: (sheet, technical field) -> reason.
+# The mapping workbook types the field as Date but its own derivation rule fills it with a
+# non-date value, so the type check would always fail.  Length checks still apply.
+KNOWN_TYPE_EXCEPTIONS = {
+    ("MBEW", "ZPLD1"): "mapping rule fills the Date field with cast(STPRS as string)",
+}
+
+
 def rule_type_length_conformance(sheet: str, s4_df: pd.DataFrame) -> RuleResult:
     mappings = get_field_mappings(sheet)
     issues = []
+    skipped = []
     for fm in mappings:
         col = _resolve_s4_column(s4_df, fm)
         if col is None:
             continue
         series = s4_df[col]
+        skip_type = (sheet, fm.source_field) in KNOWN_TYPE_EXCEPTIONS
         # length check (Text fields)
         if fm.data_type == "Text" and fm.length:
             # blanks are not measured (astype(str) would turn NaN into the 3-char string 'nan')
@@ -249,7 +259,10 @@ def rule_type_length_conformance(sheet: str, s4_df: pd.DataFrame) -> RuleResult:
                     {"field": fm.s4_field, "issue": f"{count} value(s) exceed max length {int(fm.length)}"}
                 )
         # type check (sampled - full column, capped reporting)
-        type_errors = [v for v in series if _violates_type(v, fm.data_type)]
+        type_errors = [] if skip_type else [v for v in series if _violates_type(v, fm.data_type)]
+        if skip_type:
+            skipped.append(f"{fm.s4_field} ({fm.source_field}): "
+                           f"{KNOWN_TYPE_EXCEPTIONS[(sheet, fm.source_field)]}")
         if type_errors:
             issues.append(
                 {
@@ -269,7 +282,8 @@ def rule_type_length_conformance(sheet: str, s4_df: pd.DataFrame) -> RuleResult:
         rule_id="type_length_conformance",
         name="Data Type & Length Conformance",
         status=RuleStatus.PASS,
-        summary="All field values conform to the mapped data type and length.",
+        summary="All field values conform to the mapped data type and length."
+        + (f" Known exception, type check skipped for: {'; '.join(skipped)}." if skipped else ""),
     )
 
 

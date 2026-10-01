@@ -39,27 +39,6 @@ def _to_response(report, ecc_source: str, s4_source: str) -> ValidationReportRes
     )
 
 
-def _scope_to_s_mara(actual_df):
-    """POC scope filter: keep only Actual S/4 rows whose product is listed in the S_MARA
-    reference table. Expected S/4 is already restricted by S_MARA inside the transformation,
-    so both sides then cover the same set of materials. Turn off with SP_SCOPE_TO_S_MARA=0."""
-    if os.getenv("SP_SCOPE_TO_S_MARA", "1") == "0":
-        return actual_df
-    try:
-        path = find_latest(os.path.join(settings.OUTPUT_DIR, "S_MARA", "ECC"), "S_MARA_ECC_combined")
-    except TableFileNotFound:
-        return actual_df
-    sm = read_table(path)
-    src = next((c for c in ("PRODUCT", "Product", "Material", "MATNR") if c in sm.columns), None)
-    dst = next((c for c in ("PRODUCT", "MATNR", "Product", "Material") if c in actual_df.columns), None)
-    if src is None or dst is None:
-        return actual_df
-    keep = set(sm[src].dropna().astype(str).str.lstrip("0"))
-    mask = actual_df[dst].astype(str).str.lstrip("0").isin(keep)
-    log.info("Scoped Actual S/4 to S_MARA products: %d of %d rows kept", int(mask.sum()), len(actual_df))
-    return actual_df[mask].reset_index(drop=True)
-
-
 def _load_frames(sheet: str):
     ecc_dir = os.path.join(settings.OUTPUT_DIR, sheet, "ECC")
     s4_dir  = os.path.join(settings.OUTPUT_DIR, sheet, "S4")
@@ -71,8 +50,6 @@ def _load_frames(sheet: str):
 
     raw_ecc_df = read_table(ecc_path)
     actual_s4_df = read_table(s4_path)
-    if sheet != "MARC":  # MARC follows the rule book only (no S_MARA scoping); MBEW is unchanged
-        actual_s4_df = _scope_to_s_mara(actual_s4_df)
     try:
         expected_s4_df = build_expected_s4(sheet, raw_ecc_df)
     except ReferenceDataMissing as exc:
