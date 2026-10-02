@@ -2,10 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import fetch as fetch_routes
+from app.api.routes import preview as preview_routes
+from app.api.routes import download as download_routes
 from app.api.routes import validate as validate_routes
 from app.core.config import settings
 
-app = FastAPI(title="GyanSys Migration Tool API", version="0.1.0")
+app = FastAPI(
+    title="GyanSys Migration Tool API",
+    version="0.1.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,13 +20,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(fetch_routes.router)
-app.include_router(validate_routes.router)
-
 
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok"}
+
+
+app.include_router(fetch_routes.router)
+app.include_router(preview_routes.router)
+app.include_router(download_routes.router)
+app.include_router(validate_routes.router)
+
 
 if __name__ == "__main__":
     import uvicorn

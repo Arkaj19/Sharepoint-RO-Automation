@@ -193,6 +193,38 @@ def normalize_ecc(sheet: str, raw: pd.DataFrame) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # Reference tables
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# Reference tables
+# --------------------------------------------------------------------------- #
+_REF_CACHE: dict = {}
+
+
+def _load_ref(name: str, folder: str, table_key: str, aliases: dict, required: bool):
+    d = os.path.join(settings.OUTPUT_DIR, folder, "ECC")
+    try:
+        path = find_latest(d, f"{folder}_ECC_combined")
+    except TableFileNotFound as exc:
+        if required:
+            raise ReferenceDataMissing(
+                f"{name} is required to transform ECC -> S/4 but no file was found. "
+                f"Expected {os.path.join(d, folder + '_ECC_combined.csv')} (or .xlsx).'"
+            ) from exc
+        log.warning("Optional reference table %s not found in %s", name, d)
+        return None
+
+    key = (path, os.path.getmtime(path))
+    if key in _REF_CACHE:
+        return _REF_CACHE[key]
+    pkl = path + ".refcache.pkl"
+    if os.path.exists(pkl) and os.path.getmtime(pkl) >= key[1]:
+        df = pd.read_pickle(pkl)
+    else:
+        df = _rename(read_table(path), table_key, aliases=aliases)
+        df = df[engine.REQUIRED_COLS[table_key]]
+        df.to_pickle(pkl)
+    _REF_CACHE[key] = df
+    log.info("Loaded reference %-10s %8d rows (%s)", name, len(df), os.path.basename(path))
+    return df
 def _load_ref(name: str, folder: str, table_key: str, aliases: dict, required: bool):
     d = os.path.join(settings.OUTPUT_DIR, folder, "ECC")
     try:
@@ -205,7 +237,18 @@ def _load_ref(name: str, folder: str, table_key: str, aliases: dict, required: b
             ) from exc
         log.warning("Optional reference table %s not found in %s", name, d)
         return None
-    df = _rename(read_table(path), table_key, aliases=aliases)
+    # df = _rename(read_table(path), table_key, aliases=aliases)
+    key = (path, os.path.getmtime(path))
+    if key in _REF_CACHE:                                  # in-memory: free after first call
+        return _REF_CACHE[key]
+    pkl = path + ".refcache.pkl"                           # on disk: survives restarts
+    if os.path.exists(pkl) and os.path.getmtime(pkl) >= key[1]:
+        df = pd.read_pickle(pkl)
+    else:                                                  # slow path: once per file change
+        df = _rename(read_table(path), table_key, aliases=aliases)
+        df = df[engine.REQUIRED_COLS[table_key]]           # drop the ~200 columns the engine never reads
+        df.to_pickle(pkl)
+    _REF_CACHE[key] = df
     log.info("Loaded reference %-10s %8d rows (%s)", name, len(df), os.path.basename(path))
     return df
 
